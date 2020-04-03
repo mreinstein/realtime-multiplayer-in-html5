@@ -9,10 +9,8 @@
 import game_player from './game-player.js';
 
 
-// Now the main game class. This gets created on
-// both server and client. Server creates one for
-// each game that is hosted, and client creates one
-// for itself to play the game.
+// Now the core game class. This gets created on both server and client. Server creates one for
+// each game that is hosted, and client creates one for itself to play the game.
 
 function create (game_instance) {
     const core = {
@@ -67,30 +65,6 @@ function create (game_instance) {
             self : new game_player(core),
             other : new game_player(core)
         };
-
-        // Debugging ghosts, to help visualise things
-        core.ghosts = {
-            // Our ghost position on the server
-            server_pos_self : new game_player(core),
-            // The other players server position as we receive it
-            server_pos_other : new game_player(core),
-            // The other players ghost destination position (the lerp)
-            pos_other : new game_player(core)
-        };
-
-        core.ghosts.pos_other.state = 'dest_pos';
-
-        core.ghosts.pos_other.info_color = 'rgba(255,255,255,0.1)';
-
-        core.ghosts.server_pos_self.info_color = 'rgba(255,255,255,0.2)';
-        core.ghosts.server_pos_other.info_color = 'rgba(255,255,255,0.2)';
-
-        core.ghosts.server_pos_self.state = 'server_pos';
-        core.ghosts.server_pos_other.state = 'server_pos';
-
-        core.ghosts.server_pos_self.pos = { x:20, y:20 };
-        core.ghosts.pos_other.pos = { x:500, y:200 };
-        core.ghosts.server_pos_other.pos = { x:500, y:200 };
     }
 
     return core;
