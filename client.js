@@ -16,9 +16,6 @@ import pos             from './lib/pos.js';
 import v_add           from './lib/v-add.js';
 import v_lerp          from './lib/v-lerp.js';
 
-// TODO: load socket.io and dat.gui from esm rather than static scripts in HTML
-
-
 
 function client_handle_input (client, core) {
     //if (core.lit > core.local_time) return;
@@ -156,7 +153,6 @@ function client_process_net_prediction_correction (client, core) {
             // but also confirm the server position at the same time.
             client_update_physics(client, core);
             client_update_local_position(core);
-
         }
     }
 }
@@ -167,7 +163,7 @@ function client_update_physics (client, core) {
     // and apply it to the state so we can smooth it in the visual state
     if (client.client_predict) {
         core.players.self.old_state.pos = pos(core.players.self.cur_state.pos );
-        const nd = process_input(core, core.players.self);
+        const nd = process_input(core.playerspeed, core.players.self);
         core.players.self.cur_state.pos = v_add(core.players.self.old_state.pos, nd);
         core.players.self.state_time = core.local_time;
     }
@@ -368,12 +364,12 @@ function update (client, core, t) {
 
     // and these
     if (client.show_dest_pos && !client.naive_approach)
-        client.ghosts.pos_other.draw();
+    	drawPlayer(client, client.ghosts.pos_other);
 
     // and lastly draw these
     if (client.show_server_pos && !client.naive_approach) {
-        client.ghosts.server_pos_self.draw();
-        client.ghosts.server_pos_other.draw();
+    	drawPlayer(client, client.ghosts.server_pos_self);
+        drawPlayer(client, client.ghosts.server_pos_other);
     }
 
     // Work out the fps average
@@ -416,7 +412,7 @@ function client_create_debug_gui (client, core) {
     _debugsettings.add(client, 'fps_avg').listen();
     _debugsettings.add(client, 'show_server_pos').listen();
     _debugsettings.add(client, 'show_dest_pos').listen();
-    _debugsettings.add(client, 'local_time').listen();
+    _debugsettings.add(core, 'local_time').listen();
 
     _debugsettings.open();
 
@@ -563,49 +559,49 @@ function client_onreadygame (client, core, data) {
     core.local_time = server_time + client.net_latency;
     console.log('server time is about ' + core.local_time);
 
-        //Store their info colors for clarity. server is always blue
-    player_host.info_color = '#2288cc';
-    player_client.info_color = '#cc8822';
-        
-        //Update their information
-    player_host.state = 'local_pos(hosting)';
-    player_client.state = 'local_pos(joined)';
+	//Store their info colors for clarity. server is always blue
+	player_host.info_color = '#2288cc';
+	player_client.info_color = '#cc8822';
 
-    core.players.self.state = 'YOU ' + core.players.self.state;
+	//Update their information
+	player_host.state = 'local_pos(hosting)';
+	player_client.state = 'local_pos(joined)';
 
-        //Make sure colors are synced up
-     client.socket.send('c.' + core.players.self.color);
+	core.players.self.state = 'YOU ' + core.players.self.state;
+
+	//Make sure colors are synced up
+    client.socket.send('c.' + core.players.self.color);
 }
 
 
 function client_onjoingame (client, core, data) {
-        //We are not the host
-    core.players.self.host = false;
-        //Update the local state
-    core.players.self.state = 'connected.joined.waiting';
-    core.players.self.info_color = '#00bb00';
+	//We are not the host
+	core.players.self.host = false;
+	//Update the local state
+	core.players.self.state = 'connected.joined.waiting';
+	core.players.self.info_color = '#00bb00';
 
-        //Make sure the positions match servers and other clients
-    client_reset_positions(client, core);
+	//Make sure the positions match servers and other clients
+	client_reset_positions(client, core);
 }
 
 
 function client_onhostgame (client, core, data) {
-        //The server sends the time when asking us to host, but it should be a new game.
-        //so the value will be really small anyway (15 or 16ms)
-    var server_time = parseFloat(data.replace('-','.'));
+	//The server sends the time when asking us to host, but it should be a new game.
+	//so the value will be really small anyway (15 or 16ms)
+	var server_time = parseFloat(data.replace('-','.'));
 
-        //Get an estimate of the current time on the server
-    core.local_time = server_time + client.net_latency;
+	//Get an estimate of the current time on the server
+	core.local_time = server_time + client.net_latency;
 
-        //Set the flag that we are hosting, this helps us position respawns correctly
-    core.players.self.host = true;
+	//Set the flag that we are hosting, this helps us position respawns correctly
+	core.players.self.host = true;
 
-        //Update debugging information to display state
-    core.players.self.state = 'hosting.waiting for a player';
-    core.players.self.info_color = '#cc0000';
+	//Update debugging information to display state
+	core.players.self.state = 'hosting.waiting for a player';
+	core.players.self.info_color = '#cc0000';
 
-        //Make sure we start in the correct place as the host.
+	//Make sure we start in the correct place as the host.
     client_reset_positions(client, core);
 }
 
@@ -660,10 +656,10 @@ function client_onnetmessage (client, core, data) {
                 case 'c' : //other player changed colors
                     client_on_otherclientcolorchange(core, commanddata); break;
 
-            } // subcommand
+            }
 
-        break; //'s'
-    } // command    
+        break;
+    } 
 }
 
 
@@ -782,9 +778,6 @@ window.onload = function () {
     // Connect to the socket.io server!
     client_connect_to_server(client, game);
 
-    // start pinging the server to determine latency
-    //client_create_ping_timer(client);
-
     // Set player colors from the storage or locally
     game.color = localStorage.getItem('color') || '#cc8822' ;
     localStorage.setItem('color', game.color);
@@ -801,15 +794,17 @@ window.onload = function () {
 	client.ctx = viewport.getContext('2d');
 	client.ctx.font = '11px "Helvetica"';
 
+
 	// TODO: there are several time variables, across the client and core objects.
-	//       could these be simplified/combined?
-	
+	//       could these be simplified/combined? (_dt, _dte, local_time, _pdt, _pdte)
+
 	// TODO: combine these into a single loop rather than setting off 3 separate timers
 
-	// start pinging the server to determine latency
-    //client_create_ping_timer(client);
-    // Set a ping timer to 1 second, to maintain the ping/latency between
-    // client and server and calculated roughly how our connection is doing
+	// TODO: convert to ECS https://github.com/mreinstein/ecs
+
+
+    // Set a ping timer to 1 second, to determine the ping/latency between
+    // client and server and calculate roughly how our connection is doing
     setInterval(function () {
         client.last_ping_time = new Date().getTime() - client.fake_lag;
         client.socket.send('p.' + (client.last_ping_time) );

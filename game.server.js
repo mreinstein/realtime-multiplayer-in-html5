@@ -5,7 +5,6 @@ written for : http://buildnewgames.com/real-time-multiplayer/
 
 MIT Licensed.
 */
-
 import check_collision from './check-collision.js';
 import fixed           from './lib/fixed.js';
 import gameCore        from './game.core.js'; // shared game library code
@@ -13,6 +12,14 @@ import pos             from './lib/pos.js';
 import process_input   from './process-input.js';
 import v_add           from './lib/v-add.js';
 import UUID            from 'node-uuid';
+
+
+// TODO: there are several time variables, across the client and core objects.
+//       could these be simplified/combined?
+
+// TODO: make this module fully data oriented
+
+// TODO: combine into a single event loop rather than setting off multiple independent setInterval calls
 
 
 const game_server = {
@@ -116,7 +123,6 @@ function onInput (client, parts) {
 }
 
 
-
 // run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
 const frame_time = ('undefined' != typeof(global)) ? 45 : 60 / 1000;
 
@@ -207,12 +213,12 @@ game_server.createGame = function (player) {
         core._pdte = new Date().getTime();
         // Handle player one
         core.players.self.old_state.pos = pos( core.players.self.pos );
-        const new_dir = process_input(core, core.players.self);
+        const new_dir = process_input(core.playerspeed, core.players.self);
         core.players.self.pos = v_add( core.players.self.old_state.pos, new_dir );
 
         // Handle player two
         core.players.other.old_state.pos = pos( core.players.other.pos );
-        const other_new_dir = process_input(core, core.players.other);
+        const other_new_dir = process_input(core.playerspeed, core.players.other);
         core.players.other.pos = v_add( core.players.other.old_state.pos, other_new_dir);
 
         // Keep the physics position in the world
