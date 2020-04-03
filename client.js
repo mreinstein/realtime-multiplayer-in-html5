@@ -16,12 +16,15 @@ import pos             from './lib/pos.js';
 import v_add           from './lib/v-add.js';
 import v_lerp          from './lib/v-lerp.js';
 
+// TODO: load socket.io and dat.gui from esm rather than static scripts in HTML
+
+
 
 function client_handle_input (client, core) {
     //if (core.lit > core.local_time) return;
     //core.lit = core.local_time+0.5; // one second delay
 
-    // This takes input from the client and keeps a record,
+    // takes input from the client and keeps a record,
     // It also sends the input information to the server immediately
     // as it is pressed. It also tags each input with a sequence number.
 
@@ -84,11 +87,9 @@ function client_handle_input (client, core) {
 
 
 function client_draw_info (client, core) {
-
-    // We don't want this to be too distracting
+    // don't want this to be too distracting
     client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
 
-    // They can hide the help with the debug GUI
     if (client.show_help) {
         client.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
         client.ctx.fillText('server_time : last known game time on server', 10 , 70);
@@ -100,13 +101,11 @@ function client_draw_info (client, core) {
         client.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
     }
 
-    // Draw some information for the host
     if (core.players.self.host) {
         client.ctx.fillStyle = 'rgba(255,255,255,0.7)';
         client.ctx.fillText('You are the host', 10 , 465);
     }
 
-    // Reset the style back to full white.
     client.ctx.fillStyle = 'rgba(255,255,255,1)';
 }
 
@@ -120,46 +119,46 @@ function client_process_net_prediction_correction (client, core) {
     // The most recent server update
     const latest_server_data = client.server_updates[client.server_updates.length-1];
 
-        //Our latest server position
+    // Our latest server position
     var my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
 
-        //Update the debug server position block
+    // Update the debug server position block
     client.ghosts.server_pos_self.pos = pos(my_server_pos);
 
-            //here we handle our local input prediction ,
-            //by correcting it with the server and reconciling its differences
+    // here we handle our local input prediction ,
+    // by correcting it with the server and reconciling its differences
 
-        const my_last_input_on_server = core.players.self.host ? latest_server_data.his : latest_server_data.cis;
-        if (my_last_input_on_server) {
-                //The last input sequence index in my local input list
-            let lastinputseq_index = -1;
-                //Find this input in the list, and store the index
-            for (let i = 0; i < core.players.self.inputs.length; ++i) {
-                if (core.players.self.inputs[i].seq == my_last_input_on_server) {
-                    lastinputseq_index = i;
-                    break;
-                }
+    const my_last_input_on_server = core.players.self.host ? latest_server_data.his : latest_server_data.cis;
+    if (my_last_input_on_server) {
+        // The last input sequence index in my local input list
+        let lastinputseq_index = -1;
+        // Find this input in the list, and store the index
+        for (let i = 0; i < core.players.self.inputs.length; ++i) {
+            if (core.players.self.inputs[i].seq == my_last_input_on_server) {
+                lastinputseq_index = i;
+                break;
             }
+        }
 
-                //Now we can crop the list of any updates we have already processed
-            if (lastinputseq_index != -1) {
-                //so we have now gotten an acknowledgement from the server that our inputs here have been accepted
-                //and that we can predict from this known position instead
+        // crop the list of any updates we have already processed
+        if (lastinputseq_index != -1) {
+            // so we have now gotten an acknowledgement from the server that our inputs here have been accepted
+            // and that we can predict from this known position instead
 
-                    //remove the rest of the inputs we have confirmed on the server
-                const number_to_clear = Math.abs(lastinputseq_index - (-1));
-                core.players.self.inputs.splice(0, number_to_clear);
-                    //The player is now located at the new server position, authoritive server
-                core.players.self.cur_state.pos = pos(my_server_pos);
-                core.players.self.last_input_seq = lastinputseq_index;
-                    //Now we reapply all the inputs that we have locally that
-                    //the server hasn't yet confirmed. This will 'keep' our position the same,
-                    //but also confirm the server position at the same time.
-                client_update_physics(client, core);
-                client_update_local_position(core);
+            // remove the rest of the inputs we have confirmed on the server
+            const number_to_clear = Math.abs(lastinputseq_index - (-1));
+            core.players.self.inputs.splice(0, number_to_clear);
+            // The player is now located at the new server position, authoritive server
+            core.players.self.cur_state.pos = pos(my_server_pos);
+            core.players.self.last_input_seq = lastinputseq_index;
+            // Now we reapply all the inputs that we have locally that
+            // the server hasn't yet confirmed. This will 'keep' our position the same,
+            // but also confirm the server position at the same time.
+            client_update_physics(client, core);
+            client_update_local_position(core);
 
-            } // if (lastinputseq_index != -1)
-        } //if my_last_input_on_server
+        }
+    }
 }
 
 
@@ -180,9 +179,9 @@ function client_process_net_updates (client, core) {
     if (!client.server_updates.length)
         return;
 
-    //First : Find the position in the updates, on the timeline
-    //We call this current_time, then we find the past_pos and the target_pos using this,
-    //searching throught the server_updates array for current_time in between 2 other times.
+    // First : Find the position in the updates, on the timeline
+    // We call this current_time, then we find the past_pos and the target_pos using this,
+    // searching throught the server_updates array for current_time in between 2 other times.
     // Then :  other player position = lerp ( past_pos, target_pos, current_time );
 
         //Find the position in the timeline of updates we stored.
@@ -191,16 +190,16 @@ function client_process_net_updates (client, core) {
     var target = null;
     var previous = null;
 
-        //We look from the 'oldest' updates, since the newest ones
-        //are at the end (list.length-1 for example). This will be expensive
-        //only when our time is not found on the timeline, since it will run all
-        //samples. Usually this iterates very little before breaking out with a target.
+    //We look from the 'oldest' updates, since the newest ones
+    //are at the end (list.length-1 for example). This will be expensive
+    //only when our time is not found on the timeline, since it will run all
+    //samples. Usually this iterates very little before breaking out with a target.
     for (var i = 0; i < count; ++i) {
 
         var point = client.server_updates[i];
         var next_point = client.server_updates[i+1];
 
-            //Compare our point in time with the server times we have
+        //Compare our point in time with the server times we have
         if (current_time > point.t && current_time < next_point.t) {
             target = next_point;
             previous = point;
@@ -208,8 +207,8 @@ function client_process_net_updates (client, core) {
         }
     }
 
-        //With no target we store the last known
-        //server position and move to that instead
+    //With no target we store the last known
+    //server position and move to that instead
     if (!target) {
         target = client.server_updates[0];
         previous = client.server_updates[0];
@@ -286,18 +285,18 @@ function client_process_net_updates (client, core) {
 
 function client_update_local_position (client, core) {
 	 if (client.client_predict) {
-	    //Work out the time we have since we updated the state
+	    // Work out the time we have since we updated the state
 	    var t = (core.local_time - core.players.self.state_time) / core._pdt;
 
-	    //Then store the states for clarity,
+	    // store the states for clarity,
 	    var old_state = core.players.self.old_state.pos;
 	    var current_state = core.players.self.cur_state.pos;
 
-	    //Make sure the visual position matches the states we have stored
+	    // Make sure the visual position matches the states we have stored
 	    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_state,old_state), t )  );
 	    core.players.self.pos = current_state;
 	    
-	    //We handle collision on client if predicting.
+	    // handle collision on client if predicting.
 	    check_collision(core.players.self);
     }
 }
@@ -314,7 +313,7 @@ function client_refresh_fps (client) {
         client.fps_avg = client.fps_avg_acc/10;
         client.fps_avg_count = 1;
         client.fps_avg_acc = client.fps;
-    } // reached 10 frames
+    }
 }
 
 
@@ -726,34 +725,34 @@ function createClient (core) {
 	    gui: undefined,
 	    colorcontrol: undefined,
 
-	    show_help: false,             //Whether or not to draw the help text
-	    naive_approach: false,        //Whether or not to use the naive approach
-	    show_server_pos: false,       //Whether or not to show the server position
-	    show_dest_pos: false,         //Whether or not to show the interpolation goal
-	    client_predict: true,         //Whether or not the client is predicting input
-	    input_seq: 0,                 //When predicting client inputs, we store the last input as a sequence number
-	    client_smoothing: true,       //Whether or not the client side prediction tries to smooth things out
-	    client_smooth: 25,            //amount of smoothing to apply to client update dest
+	    show_help: false,             // Whether or not to draw the help text
+	    naive_approach: false,        // Whether or not to use the naive approach
+	    show_server_pos: false,       // Whether or not to show the server position
+	    show_dest_pos: false,         // Whether or not to show the interpolation goal
+	    client_predict: true,         // Whether or not the client is predicting input
+	    input_seq: 0,                 // When predicting client inputs, we store the last input as a sequence number
+	    client_smoothing: true,       // Whether or not the client side prediction tries to smooth things out
+	    client_smooth: 25,            // amount of smoothing to apply to client update dest
 
-	    net_latency: 0.001,           //the latency between the client and the server (ping/2)
-	    net_ping: 0.001,              //The round trip time from here to the server,and back
-	    last_ping_time: 0.001,        //The time we last sent a ping
-	    fake_lag: 0,                //If we are simulating lag, this applies only to the input client (not others)
+	    net_latency: 0.001,           // the latency between the client and the server (ping/2)
+	    net_ping: 0.001,              // The round trip time from here to the server,and back
+	    last_ping_time: 0.001,        // The time we last sent a ping
+	    fake_lag: 0,                  // If we are simulating lag, this applies only to the input client (not others)
 	    //fake_lag_time: 0,
 
-	    net_offset: 100,              //100 ms latency between server and client interpolation for other clients
-	    buffer_size: 2,               //The size of the server history to keep for rewinding/interpolating.
-	    target_time: 0.01,            //the time where we want to be in the server timeline
-	    oldest_tick: 0.01,            //the last time tick we have available in the buffer
+	    net_offset: 100,              // 100 ms latency between server and client interpolation for other clients
+	    buffer_size: 2,               // The size of the server history to keep for rewinding/interpolating.
+	    target_time: 0.01,            // the time where we want to be in the server timeline
+	    oldest_tick: 0.01,            // the last time tick we have available in the buffer
 
-	    client_time: 0.01,            //Our local 'clock' based on server time - client interpolation(net_offset).
-	    server_time: 0.01,            //The time the server reported it was at, last we heard from it
+	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(net_offset).
+	    server_time: 0.01,            // The time the server reported it was at, last we heard from it
 	    
-	    dt: 0.016,                    //The time that the last frame took to run
-	    fps: 0,                       //The current instantaneous fps (1/this.dt)
-	    fps_avg_count: 0,             //The number of samples we have taken for fps_avg
-	    fps_avg: 0,                   //The current average fps displayed in the debug UI
-	    fps_avg_acc: 0,               //The accumulation of the last avgcount fps samples
+	    dt: 0.016,                    // The time that the last frame took to run
+	    fps: 0,                       // The current instantaneous fps (1/this.dt)
+	    fps_avg_count: 0,             // The number of samples we have taken for fps_avg
+	    fps_avg: 0,                   // The current average fps displayed in the debug UI
+	    fps_avg_acc: 0,               // The accumulation of the last avgcount fps samples
 
 	    //lit: 0,
 	    //llt: new Date().getTime(),
@@ -783,10 +782,10 @@ window.onload = function () {
     // Connect to the socket.io server!
     client_connect_to_server(client, game);
 
-    // We start pinging the server to determine latency
+    // start pinging the server to determine latency
     //client_create_ping_timer(client);
 
-    // Set their colors from the storage or locally
+    // Set player colors from the storage or locally
     game.color = localStorage.getItem('color') || '#cc8822' ;
     localStorage.setItem('color', game.color);
     game.players.self.color = game.color;
@@ -795,20 +794,19 @@ window.onload = function () {
     if (String(window.location).indexOf('debug') != -1)
         client_create_debug_gui(client, game);
 
-	// Fetch the viewport
 	const viewport = document.getElementById('viewport');
-		
-	// Adjust their size
 	viewport.width = game.world.width;
 	viewport.height = game.world.height;
 
-	// Fetch the rendering contexts
 	client.ctx = viewport.getContext('2d');
-
-	// Set the draw style for the font
 	client.ctx.font = '11px "Helvetica"';
 
-	// We start pinging the server to determine latency
+	// TODO: there are several time variables, across the client and core objects.
+	//       could these be simplified/combined?
+	
+	// TODO: combine these into a single loop rather than setting off 3 separate timers
+
+	// start pinging the server to determine latency
     //client_create_ping_timer(client);
     // Set a ping timer to 1 second, to maintain the ping/latency between
     // client and server and calculated roughly how our connection is doing
