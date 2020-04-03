@@ -6,8 +6,13 @@ written for : http://buildnewgames.com/real-time-multiplayer/
 MIT Licensed.
 */
 
-import gameCore from './game.core.js'; // shared game library code
-import UUID     from 'node-uuid';
+import check_collision from './check-collision.js';
+import fixed           from './lib/fixed.js';
+import gameCore        from './game.core.js'; // shared game library code
+import pos             from './lib/pos.js';
+import process_input   from './process-input.js';
+import v_add           from './lib/v-add.js';
+import UUID            from 'node-uuid';
 
 
 const game_server = {
@@ -71,7 +76,7 @@ game_server._onMessage = function (client, message) {
 
     if (message_type == 'i') {
         // Input handler will forward this
-        this.onInput(client, message_parts);
+        onInput(client, message_parts);
     } else if (message_type == 'p') {
         client.send('s.p.' + message_parts[1]);
     } else if (message_type == 'c') {    //Client changed their color!
@@ -83,7 +88,20 @@ game_server._onMessage = function (client, message) {
 };
 
 
-game_server.onInput = function (client, parts) {
+
+function handle_server_input (core, client, input, input_time, input_seq) {
+
+    // Fetch which client this refers to out of the two
+    const player_client =
+        (client.userid == core.players.self.instance.userid) ?
+            core.players.self : core.players.other;
+
+    // Store the input on the player instance for processing in the physics loop
+    player_client.inputs.push({ inputs: input, time: input_time, seq: input_seq });
+}
+
+
+function onInput (client, parts) {
     // The input commands come in like u-l,
     // so we split them up into separate commands,
     // and then update the players
@@ -94,8 +112,48 @@ game_server.onInput = function (client, parts) {
     // the client should be in a game, so
     // we can tell that game to handle the input
     if (client && client.game && client.game.gamecore)
-        gameCore.handle_server_input(client.game.gamecore, client, input_commands, input_time, input_seq);
-};
+        handle_server_input(client.game.gamecore, client, input_commands, input_time, input_seq);
+}
+
+
+
+// run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
+const frame_time = ('undefined' != typeof(global)) ? 45 : 60 / 1000;
+
+
+function update (server, core, t) {
+    // Work out the delta time
+    core.dt = core.lastframetime ? fixed( (t - core.lastframetime)/1000.0) : 0.016;
+
+    const currTime = Date.now();
+
+    // Update the game specifics and schedule the next update
+    // Makes sure things run smoothly and notifies clients of changes on the server side
+    // Update the state of our local clock to match the timer
+    server.server_time = core.local_time;
+
+    // Make a snapshot of the current state, for updating the clients
+    server.laststate = {
+        hp  : core.players.self.pos,              // 'host position', the game creators position
+        cp  : core.players.other.pos,             // 'client position', the person that joined, their position
+        his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
+        cis : core.players.other.last_input_seq,  // 'client input sequence', the last input we processed for the client
+        t   : server.server_time                    // our current local time on the server
+    };
+
+    // Send the snapshot to the 'host' player
+    if (core.players.self.instance)
+        core.players.self.instance.emit( 'onserverupdate', server.laststate );
+
+    // Send the snapshot to the 'client' player
+    if (core.players.other.instance)
+        core.players.other.instance.emit( 'onserverupdate', server.laststate );
+
+    const timeToCall = Math.max( 0, frame_time - ( currTime - (core.lastframetime || 0) ) );
+    core.updateid = setTimeout(update, timeToCall, server, core, currTime + timeToCall);
+
+    core.lastframetime = t;
+}
 
 
 // Define some required functions
@@ -116,22 +174,69 @@ game_server.createGame = function (player) {
     this.game_count++;
 
     // Create a new game core instance, this actually runs the game code like collisions and such.
-    thegame.gamecore = new gameCore.create(thegame);
-    // Start updating the game loop on the server
-    gameCore.update(thegame.gamecore, new Date().getTime());
+    const core = gameCore.create(thegame);
+    thegame.gamecore = core;
+
+    const server = {
+        server_time: 0,
+        laststate: { }
+    };
+
+    // Start a fast paced timer for measuring time easier
+    setInterval(function () {
+        core._dt = new Date().getTime() - core._dte;
+        core._dte = new Date().getTime();
+        core.local_time += core._dt / 1000.0;
+    }, 4);
 
     // tell the player that they are now the host
     // s=server message, h=you are hosting
 
-    player.send('s.h.'+ String(thegame.gamecore.local_time).replace('.','-'));
-    console.log('server host at  ' + thegame.gamecore.local_time);
+    player.send('s.h.'+ String(core.local_time).replace('.','-'));
+    console.log('server host at  ' + core.local_time);
     player.game = thegame;
     player.hosting = true;
     
     this.log('player ' + player.userid + ' created a game with id ' + player.game.id);
 
+    // Start a physics loop, this is separate to the rendering
+    // as this happens at a fixed frequency
+    setInterval(function () {
+        core._pdt = (new Date().getTime() - core._pdte)/1000.0;
+
+        core._pdte = new Date().getTime();
+        // Handle player one
+        core.players.self.old_state.pos = pos( core.players.self.pos );
+        const new_dir = process_input(core, core.players.self);
+        core.players.self.pos = v_add( core.players.self.old_state.pos, new_dir );
+
+        // Handle player two
+        core.players.other.old_state.pos = pos( core.players.other.pos );
+        const other_new_dir = process_input(core, core.players.other);
+        core.players.other.pos = v_add( core.players.other.old_state.pos, other_new_dir);
+
+        // Keep the physics position in the world
+        check_collision(core.players.self);
+        check_collision(core.players.other);
+
+        core.players.self.inputs = [ ];  // we have cleared the input buffer, so remove this
+        core.players.other.inputs = [ ]; // we have cleared the input buffer, so remove this
+
+    }, 15);
+
+    // start the loop
+    update(server, core, new Date().getTime());
+
     return thegame;
 };
+
+
+function stop_update (core) {
+    if (core.server)
+        clearTimeout(core.updateid);
+    else
+        window.cancelAnimationFrame(core.updateid);
+}
 
 
 // we are requesting to kill a game in progress.
@@ -140,7 +245,7 @@ game_server.endGame = function (gameid, userid) {
 
     if (thegame) {
         // stop the game updates immediate
-        gameCore.stop_update(thegame.gamecore);
+        stop_update(thegame.gamecore);
 
         // if the game has two players, the one is leaving
         if (thegame.player_count > 1) {

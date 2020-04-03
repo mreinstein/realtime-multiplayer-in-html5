@@ -314,6 +314,21 @@ function client_refresh_fps (core) {
 }
 
 
+function drawPlayer (player) {
+    const game = player.game;
+
+    // Set the color for this player
+    game.ctx.fillStyle = player.color;
+
+    // Draw a rectangle for us
+    game.ctx.fillRect(player.pos.x - player.size.hx, player.pos.y - player.size.hy, player.size.x, player.size.y);
+
+    // Draw a status update
+    game.ctx.fillStyle = player.info_color;
+    game.ctx.fillText(player.state, player.pos.x+10, player.pos.y + 4);
+}
+
+
 // Main update loop
 function update (core, t) {
     // Work out the delta time
@@ -339,14 +354,14 @@ function update (core, t) {
         client_process_net_updates(core);
 
     // Now they should have updated, we can draw the entity
-    core.players.other.draw();
+    drawPlayer(core.players.other);
 
     // When we are doing client side prediction, we smooth out our position
     // across frames using local input states we have stored.
     client_update_local_position(core);
 
     // And then we finally draw
-    core.players.self.draw();
+    drawPlayer(core.players.self);
 
     // and these
     if (core.show_dest_pos && !core.naive_approach)
@@ -708,11 +723,129 @@ function client_ondisconnect (core, data) {
 }
 
 
+/*
+function createClient (core) {
+	return {
+		ghosts: {
+	        // Our ghost position on the server
+	        server_pos_self: undefined,
+	        // The other players server position as we receive it
+	        server_pos_other : undefined,
+	        // The other players ghost destination position (the lerp)
+	        pos_other : undefined
+	    },
+
+	    keyboard: new THREEx.KeyboardState(),
+
+	    // A list of recent server updates we interpolate across
+	    // This is the buffer that is the driving factor for our networking
+	    server_updates: [ ],
+
+	    // Set their colors from the storage or locally
+	    color: '#cc8822', //localStorage.getItem('color') || '#cc8822'
+
+	    socket: undefined,
+	    ctx: undefined,
+	    gui: undefined,
+	    colorcontrol: undefined,
+
+	    show_help: false,             //Whether or not to draw the help text
+	    naive_approach: false,        //Whether or not to use the naive approach
+	    show_server_pos: false,       //Whether or not to show the server position
+	    show_dest_pos: false,         //Whether or not to show the interpolation goal
+	    client_predict: true,         //Whether or not the client is predicting input
+	    input_seq: 0,                 //When predicting client inputs, we store the last input as a sequence number
+	    client_smoothing: true,       //Whether or not the client side prediction tries to smooth things out
+	    client_smooth: 25,            //amount of smoothing to apply to client update dest
+
+	    net_latency: 0.001,           //the latency between the client and the server (ping/2)
+	    net_ping: 0.001,              //The round trip time from here to the server,and back
+	    last_ping_time: 0.001,        //The time we last sent a ping
+	    fake_lag: 0,                //If we are simulating lag, this applies only to the input client (not others)
+	    fake_lag_time: 0,
+
+	    net_offset: 100,              //100 ms latency between server and client interpolation for other clients
+	    buffer_size: 2,               //The size of the server history to keep for rewinding/interpolating.
+	    target_time: 0.01,            //the time where we want to be in the server timeline
+	    oldest_tick: 0.01,            //the last time tick we have available in the buffer
+
+	    client_time: 0.01,            //Our local 'clock' based on server time - client interpolation(net_offset).
+	    server_time: 0.01,            //The time the server reported it was at, last we heard from it
+	    
+	    dt: 0.016,                    //The time that the last frame took to run
+	    fps: 0,                       //The current instantaneous fps (1/this.dt)
+	    fps_avg_count: 0,             //The number of samples we have taken for fps_avg
+	    fps_avg: 0,                   //The current average fps displayed in the debug UI
+	    fps_avg_acc: 0,               //The accumulation of the last avgcount fps samples
+
+	    //lit: 0,
+	    //llt: new Date().getTime(),
+
+	    client_has_input: false
+	};
+
+	// Debugging ghosts, to help visualise things
+    core.ghosts = {
+        // Our ghost position on the server
+        server_pos_self : new game_player(core),
+        // The other players server position as we receive it
+        server_pos_other : new game_player(core),
+        // The other players ghost destination position (the lerp)
+        pos_other : new game_player(core)
+    };
+
+    core.ghosts.pos_other.state = 'dest_pos';
+
+    core.ghosts.pos_other.info_color = 'rgba(255,255,255,0.1)';
+
+    core.ghosts.server_pos_self.info_color = 'rgba(255,255,255,0.2)';
+    core.ghosts.server_pos_other.info_color = 'rgba(255,255,255,0.2)';
+
+    core.ghosts.server_pos_self.state = 'server_pos';
+    core.ghosts.server_pos_other.state = 'server_pos';
+
+    core.ghosts.server_pos_self.pos = { x:20, y:20 };
+    core.ghosts.pos_other.pos = { x:500, y:200 };
+    core.ghosts.server_pos_other.pos = { x:500, y:200 };
+}
+
+
+this.players = {
+            self : new game_player(this),
+            other : new game_player(this)
+        };
+
+        // Debugging ghosts, to help visualise things
+        this.ghosts = {
+            // Our ghost position on the server
+            server_pos_self : new game_player(this),
+            // The other players server position as we receive it
+            server_pos_other : new game_player(this),
+            // The other players ghost destination position (the lerp)
+            pos_other : new game_player(this)
+        };
+
+        this.ghosts.pos_other.state = 'dest_pos';
+
+        this.ghosts.pos_other.info_color = 'rgba(255,255,255,0.1)';
+
+        this.ghosts.server_pos_self.info_color = 'rgba(255,255,255,0.2)';
+        this.ghosts.server_pos_other.info_color = 'rgba(255,255,255,0.2)';
+
+        this.ghosts.server_pos_self.state = 'server_pos';
+        this.ghosts.server_pos_other.state = 'server_pos';
+
+        this.ghosts.server_pos_self.pos = { x:20, y:20 };
+        this.ghosts.pos_other.pos = { x:500, y:200 };
+        this.ghosts.server_pos_other.pos = { x:500, y:200 };
+*/
+
+
 // When loading, we store references to our drawing canvases, and initiate a game instance.
 window.onload = function () {
 
 	// Create our game client instance.
-	const game = new gameCore.create();
+	const game = gameCore.create();
 
 	// Create a keyboard handler
     game.keyboard = new THREEx.KeyboardState();

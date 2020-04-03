@@ -40,7 +40,7 @@ const game_player_model = {
 }
 */
 
-const game_player = function ( game_instance, player_instance ) {
+export default function game_player ( game_instance, player_instance ) {
 
     //Store the instance, if any
     this.instance = player_instance;
@@ -73,26 +73,8 @@ const game_player = function ( game_instance, player_instance ) {
     //The 'host' of a game gets created with a player instance since
     //the server already knows who they are. If the server starts a game
     //with only a host, the other player is set up in the 'else' below
-    if(player_instance)
+    if (player_instance)
         this.pos = { x:20, y:20 };
     else
         this.pos = { x:500, y:200 };
-};
-  
-
-game_player.prototype.draw = function () {
-    const game = this.game;
-
-    //Set the color for this player
-    game.ctx.fillStyle = this.color;
-
-    //Draw a rectangle for us
-    game.ctx.fillRect(this.pos.x - this.size.hx, this.pos.y - this.size.hy, this.size.x, this.size.y);
-
-    //Draw a status update
-    game.ctx.fillStyle = this.info_color;
-    game.ctx.fillText(this.state, this.pos.x+10, this.pos.y + 4);
-};
-
-
-export default game_player;
+}
