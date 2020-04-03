@@ -33,10 +33,6 @@ function create (game_instance) {
         // The speed at which the clients move.
         playerspeed: 120,
 
-        // run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
-        frame_time: ('undefined' != typeof(global)) ? 45 : 60 / 1000,
-        lastframetime: 0,
-
         // Set up some physics integration values
         _pdt: 0.0001,                // The physics update delta time
         _pdte: new Date().getTime(), // The physics update last delta time

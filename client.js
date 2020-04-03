@@ -17,7 +17,7 @@ import v_add           from './lib/v-add.js';
 import v_lerp          from './lib/v-lerp.js';
 
 
-function client_handle_input (client, core) {
+function handle_input (client, core) {
     //if (core.lit > core.local_time) return;
     //core.lit = core.local_time+0.5; // one second delay
 
@@ -83,7 +83,7 @@ function client_handle_input (client, core) {
 }
 
 
-function client_draw_info (client, core) {
+function draw_info (client, core) {
     // don't want this to be too distracting
     client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
 
@@ -107,7 +107,7 @@ function client_draw_info (client, core) {
 }
 
 
-function client_process_net_prediction_correction (client, core) {
+function process_net_prediction_correction (client, core) {
 
     // No updates...
     if (!client.server_updates.length)
@@ -151,14 +151,14 @@ function client_process_net_prediction_correction (client, core) {
             // Now we reapply all the inputs that we have locally that
             // the server hasn't yet confirmed. This will 'keep' our position the same,
             // but also confirm the server position at the same time.
-            client_update_physics(client, core);
-            client_update_local_position(core);
+            update_physics(client, core);
+            update_local_position(core);
         }
     }
 }
 
 
-function client_update_physics (client, core) {
+function update_physics (client, core) {
     // Fetch the new direction from the input buffer,
     // and apply it to the state so we can smooth it in the visual state
     if (client.client_predict) {
@@ -170,7 +170,7 @@ function client_update_physics (client, core) {
 }
 
 
-function client_process_net_updates (client, core) {
+function process_net_updates (client, core) {
     // No updates...
     if (!client.server_updates.length)
         return;
@@ -279,10 +279,10 @@ function client_process_net_updates (client, core) {
 }
 
 
-function client_update_local_position (client, core) {
+function update_local_position (client, core) {
 	 if (client.client_predict) {
 	    // Work out the time we have since we updated the state
-	    var t = (core.local_time - core.players.self.state_time) / core._pdt;
+	    //var t = (core.local_time - core.players.self.state_time) / core._pdt;
 
 	    // store the states for clarity,
 	    var old_state = core.players.self.old_state.pos;
@@ -298,7 +298,7 @@ function client_update_local_position (client, core) {
 }
 
 
-function client_refresh_fps (client) {
+function refresh_fps (client) {
     // We store the fps for 10 frames, by adding it to this accumulator
     client.fps = 1 / client.dt;
     client.fps_avg_acc += client.fps;
@@ -328,60 +328,7 @@ function drawPlayer (client, player) {
 }
 
 
-// Main update loop
-function update (client, core, t) {
-    // Work out the delta time
-    client.dt = core.lastframetime ? fixed( (t - core.lastframetime)/1000.0) : 0.016;
-
-    const currTime = Date.now();
-
-    // Update the game specifics and schedule the next update
-    // Clear the screen area
-    client.ctx.clearRect(0, 0, 720, 480);
-
-    // draw help/information if required
-    client_draw_info(client, core);
-
-    // Capture inputs from the player
-    client_handle_input(client, core);
-
-    // Network player just gets drawn normally, with interpolation from
-    // the server updates, smoothing out the positions from the past.
-    // Note that if we don't have prediction enabled - this will also
-    // update the actual local client position on screen as well.
-    if (!client.naive_approach)
-        client_process_net_updates(client, core);
-
-    // Now they should have updated, we can draw the entity
-    drawPlayer(client, core.players.other);
-
-    // When we are doing client side prediction, we smooth out our position
-    // across frames using local input states we have stored.
-    client_update_local_position(client, core);
-
-    // And then we finally draw
-    drawPlayer(client, core.players.self);
-
-    // and these
-    if (client.show_dest_pos && !client.naive_approach)
-    	drawPlayer(client, client.ghosts.pos_other);
-
-    // and lastly draw these
-    if (client.show_server_pos && !client.naive_approach) {
-    	drawPlayer(client, client.ghosts.server_pos_self);
-        drawPlayer(client, client.ghosts.server_pos_other);
-    }
-
-    // Work out the fps average
-    client_refresh_fps(client);
-
-    core.updateid = window.requestAnimationFrame(function (t) { update(client, core, t); });
-    
-    core.lastframetime = t;
-}
-
-
-function client_create_debug_gui (client, core) {
+function create_debug_gui (client, core) {
 
     client.gui = new dat.GUI();
 
@@ -439,7 +386,7 @@ function client_create_debug_gui (client, core) {
 }
 
 
-function client_connect_to_server (client, core) {  
+function connect_to_server (client, core) {  
     // Store a local reference to our connection to the server
     client.socket = io.connect();
 
@@ -451,32 +398,32 @@ function client_connect_to_server (client, core) {
 
     // Sent when we are disconnected (network, server down, etc)
     client.socket.on('disconnect', function (data) {
-        client_ondisconnect(core, data)
+        ondisconnect(core, data)
     });
 
     // Sent each tick of the server simulation. This is our authoritive update
     client.socket.on('onserverupdate', function (data) {
-        client_onserverupdate_recieved(data, client, core);
+        onserverupdate_recieved(data, client, core);
     });
 
     // Handle when we connect to the server, showing state and storing id's.
     client.socket.on('onconnected', function (data) {
-        client_onconnected(core, data);
+        onconnected(core, data);
     });
 
     // On error we just show that we are not connected for now. Can print the data.
     client.socket.on('error', function (data) {
-        client_ondisconnect(core, data)
+        ondisconnect(core, data)
     });
 
     // On message from the server, we parse the commands and send it to the handlers
     client.socket.on('message', function (data) {
-        client_onnetmessage(client, core, data);
+        onnetmessage(client, core, data);
     });
 }
 
 
-function client_onserverupdate_recieved (data, client, core) {
+function onserverupdate_recieved (data, client, core) {
     // Lets clarify the information we have locally. One of the players is 'hosting' and
     // the other is a joined in client, so we name these host and client for making sure
     // the positions we get from the server are mapped onto the correct local sprites
@@ -522,12 +469,12 @@ function client_onserverupdate_recieved (data, client, core) {
 
         //Handle the latest positions from the server
         //and make sure to correct our local predictions, making the server have final say.
-        client_process_net_prediction_correction(client, core);     
+        process_net_prediction_correction(client, core);     
     }
 }
 
 
-function client_reset_positions (client, core) {
+function reset_positions (client, core) {
 
     var player_host = core.players.self.host ?  core.players.self : core.players.other;
     var player_client = core.players.self.host ?  core.players.other : core.players.self;
@@ -549,7 +496,7 @@ function client_reset_positions (client, core) {
 }
 
 
-function client_onreadygame (client, core, data) {
+function onreadygame (client, core, data) {
 
     var server_time = parseFloat(data.replace('-','.'));
 
@@ -574,7 +521,7 @@ function client_onreadygame (client, core, data) {
 }
 
 
-function client_onjoingame (client, core, data) {
+function onjoingame (client, core, data) {
 	//We are not the host
 	core.players.self.host = false;
 	//Update the local state
@@ -582,11 +529,11 @@ function client_onjoingame (client, core, data) {
 	core.players.self.info_color = '#00bb00';
 
 	//Make sure the positions match servers and other clients
-	client_reset_positions(client, core);
+	reset_positions(client, core);
 }
 
 
-function client_onhostgame (client, core, data) {
+function onhostgame (client, core, data) {
 	//The server sends the time when asking us to host, but it should be a new game.
 	//so the value will be really small anyway (15 or 16ms)
 	var server_time = parseFloat(data.replace('-','.'));
@@ -602,11 +549,11 @@ function client_onhostgame (client, core, data) {
 	core.players.self.info_color = '#cc0000';
 
 	//Make sure we start in the correct place as the host.
-    client_reset_positions(client, core);
+    reset_positions(client, core);
 }
 
 
-function client_onconnected (core, data) {
+function onconnected (core, data) {
     //The server responded that we are now in a game,
     //this lets us store the information about ourselves and set the colors
     //to show we are now ready to be playing.
@@ -617,18 +564,18 @@ function client_onconnected (core, data) {
 }
 
 
-function client_on_otherclientcolorchange (core, data) {
+function on_otherclientcolorchange (core, data) {
     core.players.other.color = data;
 }
 
 
-function client_onping (client, data) {
+function onping (client, data) {
     client.net_ping = new Date().getTime() - parseFloat(data);
     client.net_latency = client.net_ping/2;
 }
 
 
-function client_onnetmessage (client, core, data) {
+function onnetmessage (client, core, data) {
     var commands = data.split('.');
     var command = commands[0];
     var subcommand = commands[1] || null;
@@ -639,22 +586,22 @@ function client_onnetmessage (client, core, data) {
             switch(subcommand) {
 
                 case 'h' : //host a game requested
-                    client_onhostgame(client, core, commanddata); break;
+                    onhostgame(client, core, commanddata); break;
 
                 case 'j' : //join a game requested
-                    client_onjoingame(client, core, commanddata); break;
+                    onjoingame(client, core, commanddata); break;
 
                 case 'r' : //ready a game requested
-                    client_onreadygame(client, core, commanddata); break;
+                    onreadygame(client, core, commanddata); break;
 
                 case 'e' : //end game requested
-                    client_ondisconnect(core, commanddata); break;
+                    ondisconnect(core, commanddata); break;
 
                 case 'p' : //server ping
-                    client_onping(client, commanddata); break;
+                    onping(client, commanddata); break;
 
                 case 'c' : //other player changed colors
-                    client_on_otherclientcolorchange(core, commanddata); break;
+                    on_otherclientcolorchange(core, commanddata); break;
 
             }
 
@@ -663,7 +610,7 @@ function client_onnetmessage (client, core, data) {
 }
 
 
-function client_ondisconnect (core, data) {
+function ondisconnect (core, data) {
     // When we disconnect, we don't know if the other player is
     // connected or not, and since we aren't, everything goes to offline
 
@@ -768,15 +715,8 @@ window.onload = function () {
 
 	const client = createClient(game);
 
-    // Start a fast paced timer for measuring time easier
-    setInterval(function () {
-        game._dt = new Date().getTime() - game._dte;
-        game._dte = new Date().getTime();
-        game.local_time += game._dt / 1000.0;
-    }, 4);
-
     // Connect to the socket.io server!
-    client_connect_to_server(client, game);
+    connect_to_server(client, game);
 
     // Set player colors from the storage or locally
     game.color = localStorage.getItem('color') || '#cc8822' ;
@@ -785,7 +725,7 @@ window.onload = function () {
 
 	// Make this only if requested
     if (String(window.location).indexOf('debug') != -1)
-        client_create_debug_gui(client, game);
+        create_debug_gui(client, game);
 
 	const viewport = document.getElementById('viewport');
 	viewport.width = game.world.width;
@@ -795,29 +735,77 @@ window.onload = function () {
 	client.ctx.font = '11px "Helvetica"';
 
 
-	// TODO: there are several time variables, across the client and core objects.
-	//       could these be simplified/combined? (_dt, _dte, local_time, _pdt, _pdte)
+	let currentTime = performance.now(), accumulator = 0;
 
-	// TODO: combine these into a single loop rather than setting off 3 separate timers
-
-	// TODO: convert to ECS https://github.com/mreinstein/ecs
+	const PHYSICS_FRAME_TICK = 1000 / 15; // physics runs @ 15 fps
 
 
-    // Set a ping timer to 1 second, to determine the ping/latency between
-    // client and server and calculate roughly how our connection is doing
-    setInterval(function () {
-        client.last_ping_time = new Date().getTime() - client.fake_lag;
-        client.socket.send('p.' + (client.last_ping_time) );
-    }, 1000);
+	// inspired by https://gafferongames.com/post/fix_your_timestep/
+	const update = function () {
+		const newTime = performance.now();
+		const frameTime = newTime - currentTime;
+		currentTime = newTime;
 
-	// Start a physics loop, this is separate to the rendering
-    // as this happens at a fixed frequency
-    setInterval(function () {
-    	game._pdt = (new Date().getTime() - game._pdte)/1000.0;
-	    game._pdte = new Date().getTime();
-	    client_update_physics(client, game);
-    }, 15);
+		client.dt = frameTime / 1000.0;
 
-	// start the loop
-	update(client, game, new Date().getTime());
+		game.local_time += client.dt;
+
+		accumulator += frameTime;
+
+		while (accumulator >= PHYSICS_FRAME_TICK) {
+			game._pdt = 0.015;
+			update_physics(client, game);
+			accumulator -= PHYSICS_FRAME_TICK;
+		}
+
+		// Ping the server every second, to determine the latency between
+    	// client and server and calculate roughly how our connection is doing
+		if (newTime - client.last_ping_time >= 1000) {
+			client.last_ping_time = newTime - client.fake_lag;
+			client.socket.send('p.' + (client.last_ping_time) );
+		}
+
+		// Update the game specifics and schedule the next update
+	    // Clear the screen area
+	    client.ctx.clearRect(0, 0, 720, 480);
+
+	    // draw help/information if required
+	    draw_info(client, game);
+
+	    // Capture inputs from the player
+	    handle_input(client, game);
+
+	    // Network player just gets drawn normally, with interpolation from
+	    // the server updates, smoothing out the positions from the past.
+	    // Note that if we don't have prediction enabled - this will also
+	    // update the actual local client position on screen as well.
+	    if (!client.naive_approach)
+	        process_net_updates(client, game);
+
+	    // Now they should have updated, we can draw the entity
+	    drawPlayer(client, game.players.other);
+
+	    // When we are doing client side prediction, we smooth out our position
+	    // across frames using local input states we have stored.
+	    update_local_position(client, game);
+
+	    // And then we finally draw
+	    drawPlayer(client, game.players.self);
+
+	    // and these
+	    if (client.show_dest_pos && !client.naive_approach)
+	    	drawPlayer(client, client.ghosts.pos_other);
+
+	    // and lastly draw these
+	    if (client.show_server_pos && !client.naive_approach) {
+	    	drawPlayer(client, client.ghosts.server_pos_self);
+	        drawPlayer(client, client.ghosts.server_pos_other);
+	    }
+
+	    refresh_fps(client);   // work out the fps average
+
+		game.updateid = window.requestAnimationFrame(update);
+	};
+
+	update();
 };

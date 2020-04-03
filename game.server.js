@@ -8,19 +8,19 @@ MIT Licensed.
 import check_collision from './check-collision.js';
 import fixed           from './lib/fixed.js';
 import gameCore        from './game.core.js'; // shared game library code
+//import { performance } from 'perf_hooks';
 import pos             from './lib/pos.js';
 import process_input   from './process-input.js';
 import v_add           from './lib/v-add.js';
 import UUID            from 'node-uuid';
 
 
-// TODO: there are several time variables, across the client and core objects.
-//       could these be simplified/combined?
-
 // TODO: make this module fully data oriented
 
 // TODO: combine into a single event loop rather than setting off multiple independent setInterval calls
 
+// TODO: there are several time variables, across the client and core objects.
+//       could these be simplified/combined?
 
 const game_server = {
         games : { },
@@ -123,13 +123,9 @@ function onInput (client, parts) {
 }
 
 
-// run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
-const frame_time = ('undefined' != typeof(global)) ? 45 : 60 / 1000;
-
-
 function update (server, core, t) {
     // Work out the delta time
-    core.dt = core.lastframetime ? fixed( (t - core.lastframetime)/1000.0) : 0.016;
+    core.dt = server.lastframetime ? fixed( (t - server.lastframetime)/1000.0) : 0.016;
 
     const currTime = Date.now();
 
@@ -155,10 +151,10 @@ function update (server, core, t) {
     if (core.players.other.instance)
         core.players.other.instance.emit( 'onserverupdate', server.laststate );
 
-    const timeToCall = Math.max( 0, frame_time - ( currTime - (core.lastframetime || 0) ) );
+    const timeToCall = Math.max( 0, server.frame_time - ( currTime - (server.lastframetime || 0) ) );
     core.updateid = setTimeout(update, timeToCall, server, core, currTime + timeToCall);
 
-    core.lastframetime = t;
+    server.lastframetime = t;
 }
 
 
@@ -185,8 +181,12 @@ game_server.createGame = function (player) {
 
     const server = {
         server_time: 0,
-        laststate: { }
+        laststate: { },
+        // run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
+        frame_time: ('undefined' != typeof(global)) ? 45 : 60 / 1000,
+        lastframetime: 0,
     };
+
 
     // Start a fast paced timer for measuring time easier
     setInterval(function () {
