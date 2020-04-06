@@ -46,12 +46,15 @@ export default function game_player ( game_instance, player_instance ) {
     this.game = game_instance;
 
     // Set up initial values for our state information
-    this.pos = { x:0, y:0 };
-    this.size = { x:16, y:16, hx:8, hy:8 };
+    this.size = { x: 16, y: 16, hx: 8, hy: 8 };
     this.state = 'not-connected';
     this.color = 'rgba(255,255,255,0.1)';
     this.info_color = 'rgba(255,255,255,0.1)';
     this.id = '';
+
+    this.last_input_seq = 0;  // 'host input sequence', the last input we processed for the host
+    //this.host = false;
+    //this.online = true;
 
     // These are used in moving us around later
     this.old_state = { pos: { x: 0, y: 0 } };

@@ -83,30 +83,6 @@ function handle_input (client, core) {
 }
 
 
-function draw_info (client, core) {
-    // don't want this to be too distracting
-    client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
-
-    if (client.show_help) {
-        client.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
-        client.ctx.fillText('server_time : last known game time on server', 10 , 70);
-        client.ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
-        client.ctx.fillText('net_latency : Time from you to the server. ', 10 , 130);
-        client.ctx.fillText('net_ping : Time from you to the server and back. ', 10 , 150);
-        client.ctx.fillText('fake_lag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
-        client.ctx.fillText('client_smoothing/client_smooth : When updating players information from the server, it can smooth them out.', 10 , 210);
-        client.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
-    }
-
-    if (core.players.self.host) {
-        client.ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        client.ctx.fillText('You are the host', 10 , 465);
-    }
-
-    client.ctx.fillStyle = 'rgba(255,255,255,1)';
-}
-
-
 function process_net_prediction_correction (client, core) {
 
     // No updates...
@@ -180,7 +156,7 @@ function process_net_updates (client, core) {
     // searching throught the server_updates array for current_time in between 2 other times.
     // Then :  other player position = lerp ( past_pos, target_pos, current_time );
 
-        //Find the position in the timeline of updates we stored.
+    //Find the position in the timeline of updates we stored.
     var current_time = client.client_time;
     var count = client.server_updates.length-1;
     var target = null;
@@ -310,6 +286,30 @@ function refresh_fps (client) {
         client.fps_avg_count = 1;
         client.fps_avg_acc = client.fps;
     }
+}
+
+
+function drawInfo (client, core) {
+    // don't want this to be too distracting
+    client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+
+    if (client.show_help) {
+        client.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
+        client.ctx.fillText('server_time : last known game time on server', 10 , 70);
+        client.ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
+        client.ctx.fillText('net_latency : Time from you to the server. ', 10 , 130);
+        client.ctx.fillText('net_ping : Time from you to the server and back. ', 10 , 150);
+        client.ctx.fillText('fake_lag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
+        client.ctx.fillText('client_smoothing/client_smooth : When updating players information from the server, it can smooth them out.', 10 , 210);
+        client.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
+    }
+
+    if (core.players.self.host) {
+        client.ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        client.ctx.fillText('You are the host', 10 , 465);
+    }
+
+    client.ctx.fillStyle = 'rgba(255,255,255,1)';
 }
 
 
@@ -765,13 +765,6 @@ window.onload = function () {
 			client.socket.send('p.' + (client.last_ping_time) );
 		}
 
-		// Update the game specifics and schedule the next update
-	    // Clear the screen area
-	    client.ctx.clearRect(0, 0, 720, 480);
-
-	    // draw help/information if required
-	    draw_info(client, game);
-
 	    // Capture inputs from the player
 	    handle_input(client, game);
 
@@ -782,12 +775,19 @@ window.onload = function () {
 	    if (!client.naive_approach)
 	        process_net_updates(client, game);
 
-	    // Now they should have updated, we can draw the entity
-	    drawPlayer(client, game.players.other);
-
 	    // When we are doing client side prediction, we smooth out our position
 	    // across frames using local input states we have stored.
 	    update_local_position(client, game);
+
+	    // Update the game specifics and schedule the next update
+	    // Clear the screen area
+	    client.ctx.clearRect(0, 0, 720, 480);
+
+	    // draw help/information if required
+	    drawInfo(client, game);
+	    
+	    // Now they should have updated, we can draw the entity
+	    drawPlayer(client, game.players.other);
 
 	    // And then we finally draw
 	    drawPlayer(client, game.players.self);

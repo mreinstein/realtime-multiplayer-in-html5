@@ -95,7 +95,6 @@ game_server._onMessage = function (client, message) {
 };
 
 
-
 function handle_server_input (core, client, input, input_time, input_seq) {
 
     // Fetch which client this refers to out of the two
@@ -292,7 +291,7 @@ game_server.endGame = function (gameid, userid) {
 
 
 game_server.startGame = function (game) {
-    // right so a game has 2 players and wants to begin
+    // a game has 2 players and wants to begin
     // the host already knows they are hosting,
     // tell the other client they are joining a game
     // s=server message, j=you are joining, send them the host id

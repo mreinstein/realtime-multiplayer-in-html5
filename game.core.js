@@ -58,8 +58,8 @@ function create (game_instance) {
 
     } else {
         core.players = {
-            self : new game_player(core),
-            other : new game_player(core)
+            self: new game_player(core),
+            other: new game_player(core)
         };
     }
 
