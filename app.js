@@ -11,8 +11,10 @@
 // Enter the game server code. The game server handles
 // client connections looking for a game, creating games,
 // leaving games, joining games and ending games when they leave.
-import game_server from './game.server.js';
+import GameServer from './game.server.js';
 
+
+const game_server = GameServer.createServer();
 
 let gameport        = process.env.PORT || 4004,
     io              = require('socket.io'),
@@ -92,7 +94,7 @@ sio.sockets.on('connection', function (client) {
 
     // now we can find them a game to play with someone.
     // if no game exists with someone waiting, they create one and wait.
-    game_server.findGame(client);
+    GameServer.findGame(game_server, client);
 
     // Useful to know when someone connects
     console.log('\t socket.io:: player ' + client.userid + ' connected');
@@ -100,7 +102,7 @@ sio.sockets.on('connection', function (client) {
     // Now we want to handle some of the messages that clients will send.
     // They send messages here, and we send them to the game_server to handle.
     client.on('message', function (m) {
-        game_server.onMessage(client, m);
+        GameServer.onMessage(game_server, client, m);
     });
 
     // When this client disconnects, we want to tell the game server
@@ -108,14 +110,13 @@ sio.sockets.on('connection', function (client) {
     // in, and make sure the other player knows that they left and so on.
     client.on('disconnect', function () {
 
-        // Useful to know when soomeone disconnects
+        // Useful to know when someone disconnects
         console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game_id);
         
         // If the client was in a game, set by game_server.findGame,
         // we can tell the game server to update that game state.
         if(client.game && client.game.id)
-            // player leaving a game should destroy that game
-            game_server.endGame(client.game.id, client.userid);
+            GameServer.endGame(game_server, client.game.id, client.userid);  // player leaving a game should destroy that game
     });
  
 });
