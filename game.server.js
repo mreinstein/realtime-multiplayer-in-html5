@@ -14,23 +14,20 @@ import v_add           from './lib/v-add.js';
 import UUID            from 'node-uuid';
 
 
-// TODO: combine into a single event loop rather than setting off multiple independent setInterval calls
-
+// TODO: combine into a single event loop 
 // TODO: there are several time variables, across the client and core objects. could these be simplified/combined?
 
 const verbose = true;
 
 
 function createServer () {
-    const game_server = {
+    return {
         games : { },
         game_count: 0,
         fake_latency: 0,
         // a local queue of messages we delay if faking latency
         messages: [ ]
     };
-
-    return game_server;
 }
 
 
@@ -122,7 +119,7 @@ function update (server, core, t) {
 
 
     // Make a snapshot of the current state, for updating the clients
-    server.laststate = {
+    const laststate = {
         hp  : core.players.self.pos,              // 'host position', the game creators position
         cp  : core.players.other.pos,             // 'client position', the person that joined, their position
         his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
@@ -132,11 +129,11 @@ function update (server, core, t) {
 
     // Send the snapshot to the 'host' player
     if (core.players.self.instance)
-        core.players.self.instance.emit( 'onserverupdate', server.laststate );
+        core.players.self.instance.emit( 'onserverupdate', laststate );
 
     // Send the snapshot to the 'client' player
     if (core.players.other.instance)
-        core.players.other.instance.emit( 'onserverupdate', server.laststate );
+        core.players.other.instance.emit( 'onserverupdate', laststate );
 
     const timeToCall = Math.max( 0, server.frame_time - ( currTime - (server.lastframetime || 0) ) );
     core.updateid = setTimeout(update, timeToCall, server, core, currTime + timeToCall);
@@ -166,9 +163,8 @@ function createGame (game_server, player) {
     thegame.gamecore = core;
 
     const server = {
-        laststate: { },
-        // run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
-        frame_time: ('undefined' != typeof(global)) ? 45 : 60 / 1000,
+        // run the server game at 45ms, 22hz
+        frame_time: 45,
         lastframetime: 0,
     };
 
