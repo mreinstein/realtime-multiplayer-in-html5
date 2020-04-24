@@ -26,19 +26,9 @@ function createServer () {
         games : { },
         game_count: 0,
         fake_latency: 0,
-        local_time: 0,
-        _dt: new Date().getTime(),
-        _dte: new Date().getTime(),
-
         // a local queue of messages we delay if faking latency
         messages: [ ]
     };
-
-    setInterval(function () {
-        game_server._dt = new Date().getTime() - game_server._dte;
-        game_server._dte = new Date().getTime();
-        game_server.local_time += game_server._dt / 1000.0;
-    }, 4);
 
     return game_server;
 }
@@ -123,15 +113,13 @@ function onInput (client, parts) {
 
 
 function update (server, core, t) {
-    // Work out the delta time
-    core.dt = server.lastframetime ? fixed( (t - server.lastframetime)/1000.0) : 0.016;
-
     const currTime = Date.now();
 
-    // Update the game specifics and schedule the next update
-    // Makes sure things run smoothly and notifies clients of changes on the server side
-    // Update the state of our local clock to match the timer
-    server.server_time = core.local_time;
+    core._dt = new Date().getTime() - core._dte;
+    core._dte = new Date().getTime();
+
+    core.local_time += core._dt / 1000.0;
+
 
     // Make a snapshot of the current state, for updating the clients
     server.laststate = {
@@ -139,7 +127,7 @@ function update (server, core, t) {
         cp  : core.players.other.pos,             // 'client position', the person that joined, their position
         his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
         cis : core.players.other.last_input_seq,  // 'client input sequence', the last input we processed for the client
-        t   : server.server_time                    // our current local time on the server
+        t   : core.local_time                     // our current local time on the server
     };
 
     // Send the snapshot to the 'host' player
@@ -178,20 +166,11 @@ function createGame (game_server, player) {
     thegame.gamecore = core;
 
     const server = {
-        server_time: 0,
         laststate: { },
         // run the local game at 16ms, 60hz. on server we run at 45ms, 22hz
         frame_time: ('undefined' != typeof(global)) ? 45 : 60 / 1000,
         lastframetime: 0,
     };
-
-
-    // Start a fast paced timer for measuring time easier
-    setInterval(function () {
-        core._dt = new Date().getTime() - core._dte;
-        core._dte = new Date().getTime();
-        core.local_time += core._dt / 1000.0;
-    }, 4);
 
     // tell the player that they are now the host
     // s=server message, h=you are hosting
@@ -206,9 +185,6 @@ function createGame (game_server, player) {
     // Start a physics loop, this is separate to the rendering
     // as this happens at a fixed frequency
     setInterval(function () {
-        core._pdt = (new Date().getTime() - core._pdte)/1000.0;
-
-        core._pdte = new Date().getTime();
         // Handle player one
         core.players.self.old_state.pos = pos( core.players.self.pos );
         const new_dir = process_input(core.playerspeed, core.players.self);
