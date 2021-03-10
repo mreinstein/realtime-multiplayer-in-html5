@@ -11,9 +11,6 @@ export default function inputSystem (world) {
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
             const client = entity.net_client;
             const core = entity.game_core;
-            
-            //if (core.lit > core.local_time) return;
-            //core.lit = core.local_time+0.5; // one second delay
 
             // takes input from the client and keeps a record,
             // It also sends the input information to the server immediately
@@ -49,9 +46,9 @@ export default function inputSystem (world) {
 
                 // Store the input state as a snapshot of what happened.
                 core.players.self.inputs.push({
-                    inputs : input,
-                    time : fixed(core.local_time),
-                    seq : client.input_seq
+                    inputs: input,
+                    time: fixed(core.local_time),
+                    seq: client.input_seq
                 });
 
                 // Send the packet of information to the server.
@@ -62,14 +59,7 @@ export default function inputSystem (world) {
                     server_packet += client.input_seq;
 
                 client.socket.send(server_packet);
-
-                // Return the direction if needed
-                return physics_movement_vector_from_direction(core.playerspeed, x_dir, y_dir);
-
-            } else {
-                return { x: 0, y: 0 };
             }
-
         }
     }
 

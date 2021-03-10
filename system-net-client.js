@@ -6,6 +6,9 @@ import updatePhysics  from './update-physics.js';
 import v_lerp         from './lib/v-lerp.js';
 
 
+const PHYSICS_FRAME_TIME = 0.015; // physics runs @ 15 fps
+
+
 function process_net_updates (client, core) {
     // No updates...
     if (!client.server_updates.length)
@@ -85,7 +88,7 @@ function process_net_updates (client, core) {
         client.ghosts.pos_other.pos = v_lerp(other_past_pos, other_target_pos, time_point);
 
         if (client.client_smoothing)
-            core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, core._pdt*client.client_smooth);
+            core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, PHYSICS_FRAME_TIME*client.client_smooth);
         else
             core.players.other.pos = pos(client.ghosts.pos_other.pos);
 
@@ -106,7 +109,7 @@ function process_net_updates (client, core) {
 
             // Smoothly follow the destination position
             if (client.client_smoothing)
-                core.players.self.pos = v_lerp( core.players.self.pos, local_target, core._pdt*client.client_smooth);
+                core.players.self.pos = v_lerp( core.players.self.pos, local_target, PHYSICS_FRAME_TIME*client.client_smooth);
             else
                 core.players.self.pos = pos( local_target );
         }
@@ -118,7 +121,7 @@ function process_net_updates (client, core) {
 function update_local_position (client, core) {
 	 if (client.client_predict) {
 	    // Work out the time we have since we updated the state
-	    //var t = (core.local_time - core.players.self.state_time) / core._pdt;
+	    //var t = (core.local_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
 
 	    // store the states for clarity,
 	    var old_state = core.players.self.old_state.pos;
@@ -426,10 +429,10 @@ export default function netClientSystem (world) {
     // run at the start of each game frame before fixedUpdate or update
     // @param Number dt elapsed time in milliseconds
     const onPreUpdate = function (dt) {
-        for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
-            entity.net_client.dt = dt / 1000.0;
-            entity.game_core.local_time += entity.net_client.dt;
-        }
+        dt = dt / 1000.0;  // convert ms to seconds
+
+        for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ]))
+            entity.game_core.local_time += dt;
     };
 
     const onUpdate = function (dt) {

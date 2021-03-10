@@ -15,10 +15,10 @@ import v_add          from './lib/v-add.js';
 import UUID           from 'node-uuid';
 
 
-// TODO: combine into a single event loop 
-// TODO: there are several time variables, across the client and core objects. could these be simplified/combined?
+// TODO: combine into a single event loop
 
-const verbose = true;
+const VERBOSE = true;
+const SERVER_FRAME_TIME = 45; // run the server update every 45ms, 22hz
 
 
 function createServer () {
@@ -32,10 +32,9 @@ function createServer () {
 }
 
 
-// A simple wrapper for logging so we can toggle it,
-// and augment it for clarity.
+// only console.log when in verbose mode
 function log (...args) {
-    if (verbose)
+    if (VERBOSE)
         console.log(...args);
 }
 
@@ -115,10 +114,10 @@ function onInput (client, parts) {
 function update (server, core, t) {
     const currTime = Date.now();
 
-    core._dt = new Date().getTime() - core._dte;
-    core._dte = new Date().getTime();
-
-    core.local_time += core._dt / 1000.0;
+    const dt = (currTime - server.lastUpdateTime) / 1000.0;
+    server.lastUpdateTime = currTime;
+    
+    core.local_time += dt;
 
 
     // Make a snapshot of the current state, for updating the clients
@@ -138,10 +137,10 @@ function update (server, core, t) {
     if (core.players.other.socket)
         core.players.other.socket.emit( 'onserverupdate', laststate );
 
-    const timeToCall = Math.max( 0, server.frame_time - ( currTime - (server.lastframetime || 0) ) );
+    const timeToCall = Math.max( 0, SERVER_FRAME_TIME - ( currTime - server.lastFrameTime) );
     core.updateid = setTimeout(update, timeToCall, server, core, currTime + timeToCall);
 
-    server.lastframetime = t;
+    server.lastFrameTime = t;
 }
 
 
@@ -172,9 +171,8 @@ function createGame (game_server, playerSocket) {
     game_server.game_count++;
 
     const server = {
-        // run the server game at 45ms, 22hz
-        frame_time: 45,
-        lastframetime: 0,
+        lastFrameTime: 0,
+        lastUpdateTime: 0
     };
 
     // tell the player that they are now the host
@@ -210,7 +208,7 @@ function createGame (game_server, playerSocket) {
     }, 15);
 
     // start the loop
-    update(server, core, new Date().getTime());
+    update(server, core, Date.now());
 
     return thegame;
 }

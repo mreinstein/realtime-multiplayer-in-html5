@@ -135,9 +135,7 @@ function createNetClientComponent (core) {
 	    oldest_tick: 0.01,            // the last time tick we have available in the buffer
 
 	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(net_offset).
-	    server_time: 0.01,            // The time the server reported it was at, last we heard from it
-	    
-	    dt: 0.016                     // The time that the last frame took to run
+	    server_time: 0.01             // The time the server reported it was at, last we heard from it
 	};
 
 	return client;
@@ -151,7 +149,6 @@ window.onload = function () {
 
     // Create our game client instance.
     const game = gameCore.create({ isServer: false });
-    game._pdt = 0.015; // physics runs @ 15 fps
 
     game.players.self = new game_player();
     game.players.other = new game_player();

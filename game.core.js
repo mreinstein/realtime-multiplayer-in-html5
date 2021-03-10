@@ -28,17 +28,9 @@ function create ({ isServer }) {
 
         // The speed at which the clients move.
         playerspeed: 120,
-
-        // Set up some physics integration values
-        _pdt: 0.0001,                // The physics update delta time
-
-        // doesn't seem to be used?
-        //_pdte: new Date().getTime(), // The physics update last delta time
         
-        // A local timer for precision on server and client
-        local_time: 0.016,           // The local timer
-        _dt: new Date().getTime(),   // The local timer delta
-        _dte: new Date().getTime(),   // The local timer last frame time
+        // timer for precision on server and client
+        local_time: 0.016,
 
         // this is the result of calling requestAnimationFrame or setTmeout (handle to next update callback)
         // can be used to cancel/stop the update loop
