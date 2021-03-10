@@ -47,7 +47,7 @@ export default function inputSystem (world) {
                 // Store the input state as a snapshot of what happened.
                 core.players.self.inputs.push({
                     inputs: input,
-                    time: fixed(core.local_time),
+                    time: fixed(core.network_time),
                     seq: client.input_seq
                 });
 
@@ -55,7 +55,7 @@ export default function inputSystem (world) {
                 // The input packets are labelled with an 'i' in front.
                 let server_packet = 'i.';
                     server_packet += input.join('-') + '.';
-                    server_packet += core.local_time.toFixed(3).replace('.','-') + '.';
+                    server_packet += core.network_time.toFixed(3).replace('.','-') + '.';
                     server_packet += client.input_seq;
 
                 client.socket.send(server_packet);

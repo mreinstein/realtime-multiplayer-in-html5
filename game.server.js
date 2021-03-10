@@ -117,7 +117,7 @@ function update (server, core, t) {
     const dt = (currTime - server.lastUpdateTime) / 1000.0;
     server.lastUpdateTime = currTime;
     
-    core.local_time += dt;
+    core.network_time += dt;
 
 
     // Make a snapshot of the current state, for updating the clients
@@ -126,7 +126,7 @@ function update (server, core, t) {
         cp  : core.players.other.pos,             // 'client position', the person that joined, their position
         his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
         cis : core.players.other.last_input_seq,  // 'client input sequence', the last input we processed for the client
-        t   : core.local_time                     // our current local time on the server
+        t   : core.network_time                     // our current local time on the server
     };
 
     // Send the snapshot to the 'host' player
@@ -172,14 +172,14 @@ function createGame (game_server, playerSocket) {
 
     const server = {
         lastFrameTime: 0,
-        lastUpdateTime: 0
+        lastUpdateTime: 0  // the last time the update() function ran
     };
 
     // tell the player that they are now the host
     // s=server message, h=you are hosting
 
-    playerSocket.send('s.h.'+ String(core.local_time).replace('.','-'));
-    log('server host at  ' + core.local_time);
+    playerSocket.send('s.h.'+ String(core.network_time).replace('.','-'));
+    log('server host at  ' + core.network_time);
     playerSocket.game = thegame;
     //playerSocket.hosting = true;
     
@@ -278,8 +278,8 @@ function startGame (game_server, game) {
 
     // now we tell both that the game is ready to start
     // clients will reset their positions in this case.
-    game.clientSocket.send('s.r.'+ String(game.core.local_time).replace('.','-'));
-    game.hostSocket.send('s.r.'+ String(game.core.local_time).replace('.','-'));
+    game.clientSocket.send('s.r.'+ String(game.core.network_time).replace('.','-'));
+    game.hostSocket.send('s.r.'+ String(game.core.network_time).replace('.','-'));
 
     // set this flag, so that the update loop can run it.
     game.active = true;

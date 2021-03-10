@@ -44,7 +44,7 @@ function create_debug_gui (client, core) {
     _debugsettings.add(client, 'show_help').listen();
     _debugsettings.add(client, 'show_server_pos').listen();
     _debugsettings.add(client, 'show_dest_pos').listen();
-    _debugsettings.add(core, 'local_time').listen();
+    _debugsettings.add(core, 'network_time').listen();
 
     _debugsettings.open();
 

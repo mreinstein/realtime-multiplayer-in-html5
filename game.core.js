@@ -30,7 +30,7 @@ function create ({ isServer }) {
         playerspeed: 120,
         
         // timer for precision on server and client
-        local_time: 0.016,
+        network_time: 0.016,
 
         // this is the result of calling requestAnimationFrame or setTmeout (handle to next update callback)
         // can be used to cancel/stop the update loop

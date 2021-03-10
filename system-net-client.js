@@ -121,7 +121,7 @@ function process_net_updates (client, core) {
 function update_local_position (client, core) {
 	 if (client.client_predict) {
 	    // Work out the time we have since we updated the state
-	    //var t = (core.local_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
+	    //var t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
 
 	    // store the states for clarity,
 	    var old_state = core.players.self.old_state.pos;
@@ -254,8 +254,8 @@ function onreadygame (client, core, data) {
     var player_host = core.players.self.host ?  core.players.self : core.players.other;
     var player_client = core.players.self.host ?  core.players.other : core.players.self;
 
-    core.local_time = server_time + client.net_latency;
-    console.log('server time is about ' + core.local_time);
+    core.network_time = server_time + client.net_latency;
+    console.log('server time is about ' + core.network_time);
 
 	// store their info colors for clarity. server is always blue
 	player_host.info_color = '#2288cc';
@@ -290,7 +290,7 @@ function onhostgame (client, core, data) {
 	var server_time = parseFloat(data.replace('-','.'));
 
 	//Get an estimate of the current time on the server
-	core.local_time = server_time + client.net_latency;
+	core.network_time = server_time + client.net_latency;
 
 	//Set the flag that we are hosting, this helps us position respawns correctly
 	core.players.self.host = true;
@@ -321,7 +321,7 @@ function on_otherclientcolorchange (core, data) {
 
 
 function onping (client, data) {
-    client.net_ping = new Date().getTime() - parseFloat(data);
+    client.net_ping = Date.now() - parseFloat(data);
     client.net_latency = client.net_ping/2;
 }
 
@@ -432,7 +432,7 @@ export default function netClientSystem (world) {
         dt = dt / 1000.0;  // convert ms to seconds
 
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ]))
-            entity.game_core.local_time += dt;
+            entity.game_core.network_time += dt;
     };
 
     const onUpdate = function (dt) {

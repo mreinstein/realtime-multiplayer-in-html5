@@ -17,7 +17,8 @@ export default function player ( playerSocket ) {
     // These are used in moving us around later
     this.old_state = { pos: { x: 0, y: 0 } };
     this.cur_state = { pos: { x: 0, y: 0 } };
-    this.state_time = new Date().getTime();
+    
+    //this.state_time = Date.now();
 
     // Our local history of inputs
     this.inputs = [ ];
