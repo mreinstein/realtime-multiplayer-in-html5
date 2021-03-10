@@ -4,19 +4,28 @@
 
 		<title> Real time multi-player games with HTML5</title>
 
-			<!-- Load style sheet -->
-		<link href="index.css" media="screen" rel="stylesheet" type="text/css">
+		<style>
+			html , body {
+				background: #212121; 
+				color: #fff; 
+				font-family: Helvetica;
+				margin: 0; 
+				padding: 0;
+			}
 
-	<!-- Library code -->
-		
-		 	<!-- Load socket.io client side contents. -->
+			#viewport {
+				border:solid 1px #333;
+				height : 480px;
+				margin: auto;
+				left:0; right:0; top:0; bottom:0;
+				position: absolute;
+				width : 720px;
+				z-index:100;
+			}
+		</style>
+
 		<script src="/socket.io/socket.io.js"></script>
-
-
-	 		<!-- Load the GUI rendering library code. -->
-		<script type="text/javascript" src="lib/dat.gui.min.js"></script>
-	 	
-	    <!-- Load the game client code. -->
+		<script src="lib/dat.gui.min.js"></script>
 		<script type="module" src="client.js"></script>		
 
 	</head>

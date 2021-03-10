@@ -5,7 +5,7 @@
     
     MIT Licensed.
 
-    Usage : node app.js
+    Usage: node app.js
 */
 
 // Enter the game server code. The game server handles

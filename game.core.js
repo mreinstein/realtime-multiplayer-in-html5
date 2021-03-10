@@ -49,18 +49,14 @@ function create (game_instance) {
 
     // create a player set, passing them the game that is running them, as well
     if (core.server) {
-        core.players = {
-            self: new game_player(core, core.instance.player_host),
-            other: new game_player(core, core.instance.player_client)
-        };
+        core.players.self = new game_player(core, game_instance.player_host),
+        core.players.other = new game_player(core, game_instance.player_client)
 
-       core.players.self.pos = { x: 20, y: 20 };
+        core.players.self.pos = { x: 20, y: 20 };
 
     } else {
-        core.players = {
-            self: new game_player(core),
-            other: new game_player(core)
-        };
+        core.players.self = new game_player(core),
+        core.players.other = new game_player(core)
     }
 
     return core;
