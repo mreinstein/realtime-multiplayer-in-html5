@@ -1,4 +1,4 @@
-import ECS            from 'ecs';
+import ECS            from 'https://cdn.skypack.dev/ecs';
 import update_physics from './update-physics.js';
 
 

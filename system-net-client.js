@@ -1,4 +1,4 @@
-import ECS             from 'ecs';
+import ECS             from 'https://cdn.skypack.dev/ecs';
 import check_collision from './check-collision.js';
 import fixed           from './lib/fixed.js';
 import pos             from './lib/pos.js';

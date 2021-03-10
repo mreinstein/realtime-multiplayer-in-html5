@@ -5,7 +5,7 @@ written for : http://buildnewgames.com/real-time-multiplayer/
 
 MIT Licensed.
 */
-import ECS             from 'ecs';
+import ECS             from 'https://cdn.skypack.dev/ecs';
 import gameCore        from './game.core.js';
 import game_player     from './game-player.js';
 import inputSystem     from './system-input.js';

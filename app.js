@@ -12,19 +12,22 @@
 // client connections looking for a game, creating games,
 // leaving games, joining games and ending games when they leave.
 import GameServer from './game.server.js';
+import io         from 'socket.io';
+import express    from 'express';
+import path       from 'path';
+import UUID       from 'node-uuid';
+import http       from 'http';
+import { fileURLToPath } from 'url';
 
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const game_server = GameServer.createServer();
 
-let gameport        = process.env.PORT || 4004,
-    io              = require('socket.io'),
-    express         = require('express'),
-    UUID            = require('node-uuid'),
-
-    verbose         = false,
-    http            = require('http'),
-    app             = express(),
-    server          = http.createServer(app);
+let gameport = process.env.PORT || 4004,
+    verbose  = false,
+    app      = express(),
+    server   = http.createServer(app);
 
 
 // The express server handles passing our content to the browser,
@@ -33,7 +36,7 @@ let gameport        = process.env.PORT || 4004,
 // so keep this in mind - this is not a production script but a development teaching tool.
 
 // Tell the server to listen for incoming connections
-server.listen(gameport)
+server.listen(gameport);
 
 // Log something so we know that it succeeded.
 console.log('\t :: Express :: Listening on port ' + gameport );

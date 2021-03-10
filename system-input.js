@@ -1,4 +1,4 @@
-import ECS                                    from 'ecs';
+import ECS                                    from 'https://cdn.skypack.dev/ecs';
 import fixed                                  from './lib/fixed.js';
 import keyboard                               from './lib/keyboard.js';
 import physics_movement_vector_from_direction from './get-move-vector.js';
