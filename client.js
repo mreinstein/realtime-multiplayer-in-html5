@@ -62,7 +62,7 @@ function create_debug_gui (client, core) {
 
     const _netsettings = client.gui.addFolder('Networking');
 
-    _netsettings.add(client, 'net_offset').min(0.01).step(0.001).listen();
+    _netsettings.add(client, 'interpolation_offset').min(0.01).step(0.001).listen();
     _netsettings.add(client, 'server_time').step(0.001).listen();
     _netsettings.add(client, 'client_time').step(0.001).listen();
     //_netsettings.add(core, 'oldest_tick').step(0.001).listen();
@@ -129,12 +129,12 @@ function createNetClientComponent (core) {
 	    fake_lag: 0,                  // If we are simulating lag, this applies only to the input client (not others)
 	    //fake_lag_time: 0,
 
-	    net_offset: 0.1,              // 0.1s latency between server and client interpolation for other clients
+	    interpolation_offset: 0.1,    // 0.1s latency between server and client interpolation for other clients
 	    buffer_size: 2,               // The size of the server history to keep for rewinding/interpolating.
 	    target_time: 0.01,            // the time where we want to be in the server timeline
 	    oldest_tick: 0.01,            // the last time tick we have available in the buffer
 
-	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(net_offset).
+	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(interpolation_offset).
 	    server_time: 0.01             // The time the server reported it was at, last we heard from it
 	};
 

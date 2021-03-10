@@ -185,7 +185,7 @@ function onserverupdate_received (data, client, core) {
     // Store the server time (this is offset by the latency in the network, by the time we get it)
     client.server_time = data.t;
     // Update our local offset time from the last server update
-    client.client_time = client.server_time - client.net_offset;
+    client.client_time = client.server_time - client.interpolation_offset;
 
     // One approach is to set the position directly as the server tells you.
     // This is a common mistake and causes somewhat playable results on a local LAN, for example,
@@ -202,7 +202,7 @@ function onserverupdate_received (data, client, core) {
 
     } else {
         // Cache the data from the server, and then play the timeline back to the player with a
-        // small delay (net_offset), allowing interpolation between the points.
+        // small delay (interpolation_offset), allowing interpolation between the points.
         client.server_updates.push(data);
 
         //we limit the buffer in seconds worth of updates

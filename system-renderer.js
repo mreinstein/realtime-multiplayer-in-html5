@@ -6,9 +6,9 @@ function drawInfo (client, core) {
     client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
 
     if (client.show_help) {
-        client.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
+        client.ctx.fillText('interpolation_offset : local offset of others players and their server updates. Players are interpolation_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
         client.ctx.fillText('server_time : last known game time on server', 10 , 70);
-        client.ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
+        client.ctx.fillText('client_time : delayed game time on client for other players only (includes the interpolation_offset)', 10 , 90);
         client.ctx.fillText('net_latency : Time from you to the server. ', 10 , 130);
         client.ctx.fillText('net_ping : Time from you to the server and back. ', 10 , 150);
         client.ctx.fillText('fake_lag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
