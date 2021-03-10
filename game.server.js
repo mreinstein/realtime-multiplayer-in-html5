@@ -10,7 +10,7 @@ import fixed          from './lib/fixed.js';
 import gameCore       from './game.core.js'; // shared game library code
 import game_player    from './game-player.js';
 import pos            from './lib/pos.js';
-import process_input  from './process-input.js';
+import processInput  from './process-input.js';
 import v_add          from './lib/v-add.js';
 import UUID           from 'node-uuid';
 
@@ -192,12 +192,12 @@ function createGame (game_server, playerSocket) {
     setInterval(function () {
         // Handle player one
         core.players.self.old_state.pos = pos( core.players.self.pos );
-        const new_dir = process_input(core.playerspeed, core.players.self);
+        const new_dir = processInput(core.playerspeed, core.players.self);
         core.players.self.pos = v_add( core.players.self.old_state.pos, new_dir );
 
         // Handle player two
         core.players.other.old_state.pos = pos( core.players.other.pos );
-        const other_new_dir = process_input(core.playerspeed, core.players.other);
+        const other_new_dir = processInput(core.playerspeed, core.players.other);
         core.players.other.pos = v_add( core.players.other.old_state.pos, other_new_dir);
 
         // Keep the physics position in the world
@@ -217,7 +217,7 @@ function createGame (game_server, playerSocket) {
 
 
 function stop_update (core) {
-    if (core.server)
+    if (core.isServer)
         clearTimeout(core.updateid);
     else
         window.cancelAnimationFrame(core.updateid);

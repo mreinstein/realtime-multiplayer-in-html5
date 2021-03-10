@@ -11,60 +11,7 @@ import game_player     from './game-player.js';
 import inputSystem     from './system-input.js';
 import movementSystem  from './system-movement.js';
 import netClientSystem from './system-net-client.js';
-
-
-function refresh_fps (client) {
-    // We store the fps for 10 frames, by adding it to this accumulator
-    client.fps = 1 / client.dt;
-    client.fps_avg_acc += client.fps;
-    client.fps_avg_count++;
-
-    // When we reach 10 frames we work out the average fps
-    if (client.fps_avg_count >= 10) {
-        client.fps_avg = client.fps_avg_acc/10;
-        client.fps_avg_count = 1;
-        client.fps_avg_acc = client.fps;
-    }
-}
-
-
-function drawInfo (client, core) {
-    // don't want this to be too distracting
-    client.ctx.fillStyle = 'rgba(255,255,255,0.3)';
-
-    if (client.show_help) {
-        client.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
-        client.ctx.fillText('server_time : last known game time on server', 10 , 70);
-        client.ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
-        client.ctx.fillText('net_latency : Time from you to the server. ', 10 , 130);
-        client.ctx.fillText('net_ping : Time from you to the server and back. ', 10 , 150);
-        client.ctx.fillText('fake_lag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
-        client.ctx.fillText('client_smoothing/client_smooth : When updating players information from the server, it can smooth them out.', 10 , 210);
-        client.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
-    }
-
-    if (core.players.self.host) {
-        client.ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        client.ctx.fillText('You are the host', 10 , 465);
-    }
-
-    client.ctx.fillStyle = 'rgba(255,255,255,1)';
-}
-
-
-function drawPlayer (client, player) {
-    const game = player.game;
-
-    // Set the color for this player
-    client.ctx.fillStyle = player.color;
-
-    // Draw a rectangle for us
-    client.ctx.fillRect(player.pos.x - player.size.hx, player.pos.y - player.size.hy, player.size.x, player.size.y);
-
-    // Draw a status update
-    client.ctx.fillStyle = player.info_color;
-    client.ctx.fillText(player.state, player.pos.x+10, player.pos.y + 4);
-}
+import rendererSystem  from './system-renderer.js';
 
 
 function create_debug_gui (client, core) {
@@ -95,7 +42,6 @@ function create_debug_gui (client, core) {
     const _debugsettings = client.gui.addFolder('Debug view');
         
     _debugsettings.add(client, 'show_help').listen();
-    _debugsettings.add(client, 'fps_avg').listen();
     _debugsettings.add(client, 'show_server_pos').listen();
     _debugsettings.add(client, 'show_dest_pos').listen();
     _debugsettings.add(core, 'local_time').listen();
@@ -125,7 +71,7 @@ function create_debug_gui (client, core) {
 }
 
 
-function createClient (core) {
+function createNetClientComponent (core) {
 
 	const ghosts = {
 		// Our ghost position on the server
@@ -191,11 +137,7 @@ function createClient (core) {
 	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(net_offset).
 	    server_time: 0.01,            // The time the server reported it was at, last we heard from it
 	    
-	    dt: 0.016,                    // The time that the last frame took to run
-	    fps: 0,                       // The current instantaneous fps (1/this.dt)
-	    fps_avg_count: 0,             // The number of samples we have taken for fps_avg
-	    fps_avg: 0,                   // The current average fps displayed in the debug UI
-	    fps_avg_acc: 0                // The accumulation of the last avgcount fps samples
+	    dt: 0.016                     // The time that the last frame took to run
 	};
 
 	return client;
@@ -209,21 +151,23 @@ window.onload = function () {
 
     // Create our game client instance.
     const game = gameCore.create({ isServer: false });
+    game._pdt = 0.015; // physics runs @ 15 fps
 
     game.players.self = new game_player();
     game.players.other = new game_player();
 
 
-    const client = createClient(game);
+    const client = createNetClientComponent(game);
 
     const clientEntity = ECS.createEntity(world);
     ECS.addComponentToEntity(world, clientEntity, 'game_core', game);
     ECS.addComponentToEntity(world, clientEntity, 'net_client', client);
     ECS.addComponentToEntity(world, clientEntity, 'movement');
 
-    ECS.addSystem(world, inputSystem);
     ECS.addSystem(world, movementSystem);
+    ECS.addSystem(world, inputSystem);
     ECS.addSystem(world, netClientSystem);
+    ECS.addSystem(world, rendererSystem);
 
 
     // Set player colors from the storage or locally
@@ -254,11 +198,9 @@ window.onload = function () {
 		const frameTime = newTime - currentTime;
 		currentTime = newTime;
 
-		client.dt = frameTime / 1000.0;
+        ECS.preUpdate(world, frameTime);
 
-		game.local_time += client.dt;
-
-		accumulator += frameTime;
+        accumulator += frameTime;
 
         // reset accumulator when > 2 seconds of time has elapsed since last step
         // e.g., when the game window is restored after being hidden for a while
@@ -271,31 +213,6 @@ window.onload = function () {
 		}
 
         ECS.update(world, frameTime);
-
-	    // Update the game specifics and schedule the next update
-	    // Clear the screen area
-	    client.ctx.clearRect(0, 0, 720, 480);
-
-	    // draw help/information if required
-	    drawInfo(client, game);
-	    
-	    // Now they should have updated, we can draw the entity
-	    drawPlayer(client, game.players.other);
-
-	    // And then we finally draw
-	    drawPlayer(client, game.players.self);
-
-	    // and these
-	    if (client.show_dest_pos && !client.naive_approach)
-	    	drawPlayer(client, client.ghosts.pos_other);
-
-	    // and lastly draw these
-	    if (client.show_server_pos && !client.naive_approach) {
-	    	drawPlayer(client, client.ghosts.server_pos_self);
-	        drawPlayer(client, client.ghosts.server_pos_other);
-	    }
-
-	    refresh_fps(client);   // work out the fps average
 
 		game.updateid = window.requestAnimationFrame(update);
 	};

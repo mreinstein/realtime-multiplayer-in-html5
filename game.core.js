@@ -13,7 +13,7 @@
 function create ({ isServer }) {
     return {
         // Store a flag if we are the server
-        server: isServer, 
+        isServer, 
 
         // Used in collision etc.
         world: {
@@ -31,7 +31,9 @@ function create ({ isServer }) {
 
         // Set up some physics integration values
         _pdt: 0.0001,                // The physics update delta time
-        _pdte: new Date().getTime(), // The physics update last delta time
+
+        // doesn't seem to be used?
+        //_pdte: new Date().getTime(), // The physics update last delta time
         
         // A local timer for precision on server and client
         local_time: 0.016,           // The local timer

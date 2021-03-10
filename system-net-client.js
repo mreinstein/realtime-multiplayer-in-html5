@@ -2,7 +2,7 @@ import ECS            from 'https://cdn.skypack.dev/ecs';
 import checkCollision from './check-collision.js';
 import fixed          from './lib/fixed.js';
 import pos            from './lib/pos.js';
-import update_physics from './update-physics.js';
+import updatePhysics  from './update-physics.js';
 import v_lerp         from './lib/v-lerp.js';
 
 
@@ -414,7 +414,7 @@ function process_net_prediction_correction (client, core) {
             // Now we reapply all the inputs that we have locally that
             // the server hasn't yet confirmed. This will 'keep' our position the same,
             // but also confirm the server position at the same time.
-            update_physics(client, core);
+            updatePhysics(client, core);
             update_local_position(core);
         }
     }
@@ -422,6 +422,15 @@ function process_net_prediction_correction (client, core) {
 
 
 export default function netClientSystem (world) {
+
+    // run at the start of each game frame before fixedUpdate or update
+    // @param Number dt elapsed time in milliseconds
+    const onPreUpdate = function (dt) {
+        for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
+            entity.net_client.dt = dt / 1000.0;
+            entity.game_core.local_time += entity.net_client.dt;
+        }
+    };
 
     const onUpdate = function (dt) {
 
@@ -436,8 +445,6 @@ export default function netClientSystem (world) {
     			connect_to_server(client, game);
     			continue;
         	}
-
-        	// TODO: check client socket state here
 
             // Ping the server every second, to determine the latency between
 	    	// client and server and calculate roughly how our connection is doing
@@ -457,7 +464,7 @@ export default function netClientSystem (world) {
 		    // across frames using local input states we have stored.
 		    update_local_position(client, game);
         }
-    }
+    };
 
-    return { onUpdate }
+    return { onPreUpdate, onUpdate }
 }
