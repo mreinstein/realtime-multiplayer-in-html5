@@ -6,6 +6,7 @@ written for : http://buildnewgames.com/real-time-multiplayer/
 MIT Licensed.
 */
 import ECS             from 'https://cdn.skypack.dev/ecs';
+import Renderer        from './Renderer.js';
 import gameCore        from './game.core.js';
 import game_player     from './game-player.js';
 import inputSystem     from './system-input.js';
@@ -16,15 +17,15 @@ import rendererSystem  from './system-renderer.js';
 
 function create_debug_gui (client, core) {
 
-    client.gui = new dat.GUI();
+    const gui = new dat.GUI();
 
-    const _playersettings = client.gui.addFolder('Your settings');
+    const _playersettings = gui.addFolder('Your settings');
 
-    client.colorcontrol = _playersettings.addColor(core, 'color');
+    const colorcontrol = _playersettings.addColor(core, 'color');
 
-    //We want to know when we change our color so we can tell
-    //the server to tell the other clients for us
-    client.colorcontrol.onChange(function (value) {
+    // We want to know when we change our color so we can tell
+    // the server to tell the other clients for us
+    colorcontrol.onChange(function (value) {
         core.players.self.color = value;
         localStorage.setItem('color', value);
         client.socket.send('c.' + value);
@@ -32,14 +33,14 @@ function create_debug_gui (client, core) {
 
     _playersettings.open();
 
-    const _othersettings = client.gui.addFolder('Methods');
+    const _othersettings = gui.addFolder('Methods');
 
     _othersettings.add(client, 'naive_approach').listen();
     _othersettings.add(client, 'client_smoothing').listen();
     _othersettings.add(client, 'client_smooth').listen();
     _othersettings.add(client, 'client_predict').listen();
 
-    const _debugsettings = client.gui.addFolder('Debug view');
+    const _debugsettings = gui.addFolder('Debug view');
         
     _debugsettings.add(client, 'show_help').listen();
     _debugsettings.add(client, 'show_server_pos').listen();
@@ -48,7 +49,7 @@ function create_debug_gui (client, core) {
 
     _debugsettings.open();
 
-    const _consettings = client.gui.addFolder('Connection');
+    const _consettings = gui.addFolder('Connection');
     _consettings.add(client, 'net_latency').step(0.001).listen();
     _consettings.add(client, 'net_ping').step(0.001).listen();
 
@@ -60,7 +61,7 @@ function create_debug_gui (client, core) {
 
     _consettings.open();
 
-    const _netsettings = client.gui.addFolder('Networking');
+    const _netsettings = gui.addFolder('Networking');
 
     _netsettings.add(client, 'interpolation_offset').min(0.01).step(0.001).listen();
     _netsettings.add(client, 'server_time').step(0.001).listen();
@@ -110,9 +111,6 @@ function createNetClientComponent (core) {
 	    //color: '#cc8822', //localStorage.getItem('color') || '#cc8822'
 
 	    socket: undefined,
-	    ctx: undefined,
-	    gui: undefined,
-	    colorcontrol: undefined,
 
 	    show_help: false,             // Whether or not to draw the help text
 	    naive_approach: false,        // Whether or not to use the naive approach
@@ -180,9 +178,8 @@ window.onload = function () {
 	viewport.width = game.world.width;
 	viewport.height = game.world.height;
 
-	client.ctx = viewport.getContext('2d');
-	client.ctx.font = '11px "Helvetica"';
-
+	Renderer.ctx = viewport.getContext('2d');
+	Renderer.ctx.font = '11px "Helvetica"';
 
 	let currentTime = performance.now(), accumulator = 0;
 

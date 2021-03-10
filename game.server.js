@@ -181,7 +181,6 @@ function createGame (game_server, playerSocket) {
     playerSocket.send('s.h.'+ String(core.network_time).replace('.','-'));
     log('server host at  ' + core.network_time);
     playerSocket.game = thegame;
-    //playerSocket.hosting = true;
     
     log('player ' + playerSocket.userid + ' created a game with id ' + thegame.id);
 
@@ -250,7 +249,6 @@ function endGame (game_server, gameid, userid) {
                     // tell the client the game is ended
                     thegame.hostSocket.send('s.e');
                     // i am no longer hosting, this game is going down
-                    //thegame.hostSocket.hosting = false;
                     // now look for/create a new game.
                     findGame(game_server, thegame.hostSocket);
                 }
