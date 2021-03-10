@@ -123,5 +123,21 @@ sio.sockets.on('connection', function (client) {
         if(client.game && client.game.id)
             GameServer.endGame(game_server, client.game.id, client.userid);  // player leaving a game should destroy that game
     });
- 
 });
+
+
+function tick () {
+    game_server.accumulator += 15;
+
+    GameServer.update(game_server);
+
+    if (game_server.accumulator === 45) {
+        game_server.accumulator = 0;
+        GameServer.broadcast(game_server);
+    }
+
+    setTimeout(tick, 15);
+}
+
+
+setTimeout(tick, 15);

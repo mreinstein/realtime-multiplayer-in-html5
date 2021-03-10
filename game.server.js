@@ -10,12 +10,10 @@ import fixed          from './lib/fixed.js';
 import gameCore       from './game.core.js'; // shared game library code
 import game_player    from './game-player.js';
 import pos            from './lib/pos.js';
-import processInput  from './process-input.js';
+import processInput   from './process-input.js';
 import v_add          from './lib/v-add.js';
 import UUID           from 'node-uuid';
 
-
-// TODO: combine into a single event loop
 
 const VERBOSE = true;
 const SERVER_FRAME_TIME = 45; // run the server update every 45ms, 22hz
@@ -23,6 +21,7 @@ const SERVER_FRAME_TIME = 45; // run the server update every 45ms, 22hz
 
 function createServer () {
     return {
+        accumulator: 0, // used to tick the update and broadcast functions at a fixed rate
         games : { },
         game_count: 0,
         fake_latency: 0,
@@ -111,39 +110,6 @@ function onInput (client, parts) {
 }
 
 
-function update (server, core, t) {
-    const currTime = Date.now();
-
-    const dt = (currTime - server.lastUpdateTime) / 1000.0;
-    server.lastUpdateTime = currTime;
-    
-    core.network_time += dt;
-
-
-    // Make a snapshot of the current state, for updating the clients
-    const laststate = {
-        hp  : core.players.self.pos,              // 'host position', the game creators position
-        cp  : core.players.other.pos,             // 'client position', the person that joined, their position
-        his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
-        cis : core.players.other.last_input_seq,  // 'client input sequence', the last input we processed for the client
-        t   : core.network_time                     // our current local time on the server
-    };
-
-    // Send the snapshot to the 'host' player
-    if (core.players.self.socket)
-        core.players.self.socket.emit( 'onserverupdate', laststate );
-
-    // Send the snapshot to the 'client' player
-    if (core.players.other.socket)
-        core.players.other.socket.emit( 'onserverupdate', laststate );
-
-    const timeToCall = Math.max( 0, SERVER_FRAME_TIME - ( currTime - server.lastFrameTime) );
-    core.updateid = setTimeout(update, timeToCall, server, core, currTime + timeToCall);
-
-    server.lastFrameTime = t;
-}
-
-
 // Define some required functions
 function createGame (game_server, playerSocket) {
     
@@ -152,10 +118,10 @@ function createGame (game_server, playerSocket) {
 
     // Create a new game instance
     const thegame = {
-        id: UUID(),                // generate a new id for the game
+        id: UUID(),               // generate a new id for the game
         hostSocket: playerSocket, // so we know who initiated the game
         clientSocket: undefined,  // nobody else joined yet, since its new
-        player_count: 1,           // for simple checking of state
+        player_count: 1,          // for simple checking of state
         core
     };
 
@@ -170,11 +136,6 @@ function createGame (game_server, playerSocket) {
     // Keep track
     game_server.game_count++;
 
-    const server = {
-        lastFrameTime: 0,
-        lastUpdateTime: 0  // the last time the update() function ran
-    };
-
     // tell the player that they are now the host
     // s=server message, h=you are hosting
 
@@ -184,9 +145,47 @@ function createGame (game_server, playerSocket) {
     
     log('player ' + playerSocket.userid + ' created a game with id ' + thegame.id);
 
-    // Start a physics loop, this is separate to the rendering
-    // as this happens at a fixed frequency
-    setInterval(function () {
+    return thegame;
+}
+
+
+// this runs every 45 ms
+function broadcast (game_server) {
+    const dt = 0.045;
+
+    for (const gameid in game_server.games) {
+        const thegame = game_server.games[gameid];
+        const core = thegame.core;
+
+        core.network_time += dt;
+
+        // Make a snapshot of the current state, for updating the clients
+        const laststate = {
+            hp  : core.players.self.pos,              // 'host position', the game creators position
+            cp  : core.players.other.pos,             // 'client position', the person that joined, their position
+            his : core.players.self.last_input_seq,   // 'host input sequence', the last input we processed for the host
+            cis : core.players.other.last_input_seq,  // 'client input sequence', the last input we processed for the client
+            t   : core.network_time                     // our current local time on the server
+        };
+
+        // Send the snapshot to the 'host' player
+        if (core.players.self.socket)
+            core.players.self.socket.emit( 'onserverupdate', laststate );
+
+        // Send the snapshot to the 'client' player
+        if (core.players.other.socket)
+            core.players.other.socket.emit( 'onserverupdate', laststate );   
+    }
+}
+
+
+// this runs every 15 ms
+function update (game_server) {
+    for (const gameid in game_server.games) {
+        const thegame = game_server.games[gameid];
+       
+        const core = thegame.core;
+
         // Handle player one
         core.players.self.old_state.pos = pos( core.players.self.pos );
         const new_dir = processInput(core.playerspeed, core.players.self);
@@ -203,21 +202,7 @@ function createGame (game_server, playerSocket) {
 
         core.players.self.inputs = [ ];  // we have cleared the input buffer, so remove this
         core.players.other.inputs = [ ]; // we have cleared the input buffer, so remove this
-
-    }, 15);
-
-    // start the loop
-    update(server, core, Date.now());
-
-    return thegame;
-}
-
-
-function stop_update (core) {
-    if (core.isServer)
-        clearTimeout(core.updateid);
-    else
-        window.cancelAnimationFrame(core.updateid);
+    }
 }
 
 
@@ -226,9 +211,6 @@ function endGame (game_server, gameid, userid) {
     const thegame = game_server.games[gameid];
 
     if (thegame) {
-        // stop the game updates immediate
-        stop_update(thegame.core);
-
         // if the game has two players, the one is leaving
         if (thegame.player_count > 1) {
 
@@ -266,7 +248,7 @@ function endGame (game_server, gameid, userid) {
 }
 
 
-function startGame (game_server, game) {
+function startGame (game) {
     // a game has 2 players and wants to begin
     // the host already knows they are hosting,
     // tell the other client they are joining a game
@@ -278,17 +260,13 @@ function startGame (game_server, game) {
     // clients will reset their positions in this case.
     game.clientSocket.send('s.r.'+ String(game.core.network_time).replace('.','-'));
     game.hostSocket.send('s.r.'+ String(game.core.network_time).replace('.','-'));
-
-    // set this flag, so that the update loop can run it.
-    game.active = true;
 }
 
 
 function findGame (game_server, playerSocket) {
     log('looking for a game. We have : ' + game_server.game_count);
 
-    // so there are games active,
-    // lets see if one needs another player
+    // see if any active games need another player
     if (game_server.game_count) {
             
         let joined_a_game = false;
@@ -315,7 +293,7 @@ function findGame (game_server, playerSocket) {
 
                 // start running the game on the server,
                 // which will tell them to respawn/start
-                startGame(game_server, game_instance);
+                startGame(game_instance);
 
             } //if less than 2 players
         } // for all games
@@ -336,5 +314,7 @@ export default {
     createServer,
     findGame,
     endGame,
-    onMessage
+    onMessage,
+    broadcast,
+    update
 };

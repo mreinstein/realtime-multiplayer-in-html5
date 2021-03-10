@@ -1,7 +1,7 @@
 import physics_movement_vector_from_direction from './get-move-vector.js';
 
 
-export default function process_input (playerspeed, player) {
+export default function processInput (playerspeed, player) {
     // It's possible to have received multiple inputs by now, so we process each one
     let x_dir = 0;
     let y_dir = 0;
