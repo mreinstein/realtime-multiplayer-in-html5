@@ -154,7 +154,7 @@ function connect_to_server (client, core) {
 
     // Sent each tick of the server simulation. This is our authoritive update
     client.socket.on('onserverupdate', function (data) {
-        onserverupdate_recieved(data, client, core);
+        onserverupdate_received(data, client, core);
     });
 
     // Handle when we connect to the server, showing state and storing id's.
@@ -174,7 +174,7 @@ function connect_to_server (client, core) {
 }
 
 
-function onserverupdate_recieved (data, client, core) {
+function onserverupdate_received (data, client, core) {
     // Lets clarify the information we have locally. One of the players is 'hosting' and
     // the other is a joined in client, so we name these host and client for making sure
     // the positions we get from the server are mapped onto the correct local sprites

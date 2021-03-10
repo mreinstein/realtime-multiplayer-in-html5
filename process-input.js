@@ -2,7 +2,7 @@ import physics_movement_vector_from_direction from './get-move-vector.js';
 
 
 export default function process_input (playerspeed, player) {
-    // It's possible to have recieved multiple inputs by now, so we process each one
+    // It's possible to have received multiple inputs by now, so we process each one
     let x_dir = 0;
     let y_dir = 0;
     const ic = player.inputs.length;
