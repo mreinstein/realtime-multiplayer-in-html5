@@ -6,28 +6,24 @@
     MIT Licensed.
 */
 
-import game_player from './game-player.js';
 
-
-// Now the core game class. This gets created on both server and client. Server creates one for
+// This gets created on both server and client. Server creates one for
 // each game that is hosted, and client creates one for itself to play the game.
 
-function create (game_instance) {
-    const core = {
-        instance: game_instance,
-
+function create ({ isServer }) {
+    return {
         // Store a flag if we are the server
-        server: game_instance !== undefined, 
+        server: isServer, 
 
         // Used in collision etc.
         world: {
-            width : 720,
-            height : 480
+            width: 720,
+            height: 480
         },
 
         players: {
-            self : undefined,
-            other : undefined
+            self: undefined,
+            other: undefined
         },
 
         // The speed at which the clients move.
@@ -46,20 +42,6 @@ function create (game_instance) {
         // can be used to cancel/stop the update loop
         updateid: undefined
     };
-
-    // create a player set, passing them the game that is running them, as well
-    if (core.server) {
-        core.players.self = new game_player(core, game_instance.player_host),
-        core.players.other = new game_player(core, game_instance.player_client)
-
-        core.players.self.pos = { x: 20, y: 20 };
-
-    } else {
-        core.players.self = new game_player(core),
-        core.players.other = new game_player(core)
-    }
-
-    return core;
 }
 
 

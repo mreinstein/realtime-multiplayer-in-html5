@@ -1,9 +1,9 @@
-import ECS             from 'https://cdn.skypack.dev/ecs';
-import check_collision from './check-collision.js';
-import fixed           from './lib/fixed.js';
-import pos             from './lib/pos.js';
-import update_physics  from './update-physics.js';
-import v_lerp          from './lib/v-lerp.js';
+import ECS            from 'https://cdn.skypack.dev/ecs';
+import checkCollision from './check-collision.js';
+import fixed          from './lib/fixed.js';
+import pos            from './lib/pos.js';
+import update_physics from './update-physics.js';
+import v_lerp         from './lib/v-lerp.js';
 
 
 function process_net_updates (client, core) {
@@ -51,7 +51,7 @@ function process_net_updates (client, core) {
     //This is simple percentage maths, value/target = [0,1] range of numbers.
     //lerp requires the 0,1 value to lerp to? thats the one.
 
-     if (target && previous) {
+    if (target && previous) {
 
         client.target_time = target.t;
 
@@ -89,29 +89,29 @@ function process_net_updates (client, core) {
         else
             core.players.other.pos = pos(client.ghosts.pos_other.pos);
 
-            //Now, if not predicting client movement , we will maintain the local player position
-            //using the same method, smoothing the players information from the past.
+        // Now, if not predicting client movement , we will maintain the local player position
+        // using the same method, smoothing the players information from the past.
         if (!client.client_predict && !client.naive_approach) {
 
-                //These are the exact server positions from this tick, but only for the ghost
+            // These are the exact server positions from this tick, but only for the ghost
             var my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
 
-                //The other players positions in this timeline, behind us and in front of us
+            // The other players positions in this timeline, behind us and in front of us
             var my_target_pos = core.players.self.host ? target.hp : target.cp;
             var my_past_pos = core.players.self.host ? previous.hp : previous.cp;
 
-                //Snap the ghost to the new server position
+            // Snap the ghost to the new server position
             client.ghosts.server_pos_self.pos = pos(my_server_pos);
             var local_target = v_lerp(my_past_pos, my_target_pos, time_point);
 
-                //Smoothly follow the destination position
+            // Smoothly follow the destination position
             if (client.client_smoothing)
                 core.players.self.pos = v_lerp( core.players.self.pos, local_target, core._pdt*client.client_smooth);
             else
                 core.players.self.pos = pos( local_target );
         }
 
-    } //if target && previous
+    } // if target && previous
 }
 
 
@@ -129,7 +129,7 @@ function update_local_position (client, core) {
 	    core.players.self.pos = current_state;
 	    
 	    // handle collision on client if predicting.
-	    check_collision(core.players.self);
+	    checkCollision(core.world, core.players.self);
     }
 }
 
@@ -439,12 +439,11 @@ export default function netClientSystem (world) {
 
         	// TODO: check client socket state here
 
-
             // Ping the server every second, to determine the latency between
 	    	// client and server and calculate roughly how our connection is doing
 			if (newTime - client.last_ping_time >= 1000) {
 				client.last_ping_time = newTime - client.fake_lag;
-				client.socket.send('p.' + (client.last_ping_time) );
+				client.socket.send('p.' + client.last_ping_time);
 			}
 
 		    // Network player just gets drawn normally, with interpolation from

@@ -129,13 +129,13 @@ function createClient (core) {
 
 	const ghosts = {
 		// Our ghost position on the server
-        server_pos_self: new game_player(core),
+        server_pos_self: new game_player(),
 
         // The other players server position as we receive it
-        server_pos_other: new game_player(core),
+        server_pos_other: new game_player(),
 
         // The other players ghost destination position (the lerp)
-        pos_other: new game_player(core)
+        pos_other: new game_player()
     };
 
 	ghosts.pos_other.state = 'dest_pos';
@@ -208,7 +208,12 @@ window.onload = function () {
     const world = ECS.createWorld();
 
     // Create our game client instance.
-    const game = gameCore.create();
+    const game = gameCore.create({ isServer: false });
+
+    game.players.self = new game_player();
+    game.players.other = new game_player();
+
+
     const client = createClient(game);
 
     const clientEntity = ECS.createEntity(world);
@@ -227,7 +232,7 @@ window.onload = function () {
     game.players.self.color = game.color;
 
 	// Make this only if requested
-    if (String(window.location).indexOf('debug') != -1)
+    if (String(window.location).includes('debug'))
         create_debug_gui(client, game);
 
 	const viewport = document.getElementById('viewport');
