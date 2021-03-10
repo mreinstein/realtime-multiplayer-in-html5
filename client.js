@@ -129,7 +129,7 @@ function createNetClientComponent (core) {
 	    fake_lag: 0,                  // If we are simulating lag, this applies only to the input client (not others)
 	    //fake_lag_time: 0,
 
-	    net_offset: 100,              // 100 ms latency between server and client interpolation for other clients
+	    net_offset: 0.1,              // 0.1s latency between server and client interpolation for other clients
 	    buffer_size: 2,               // The size of the server history to keep for rewinding/interpolating.
 	    target_time: 0.01,            // the time where we want to be in the server timeline
 	    oldest_tick: 0.01,            // the last time tick we have available in the buffer
