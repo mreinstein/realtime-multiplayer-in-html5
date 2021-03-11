@@ -7,7 +7,7 @@ import physics_movement_vector_from_direction from './get-move-vector.js';
 export default function inputSystem (world) {
 
     const onUpdate = function (dt) {
-        // get all of the entities in the world that pass the filter
+
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
             const client = entity.net_client;
             const core = entity.game_core;

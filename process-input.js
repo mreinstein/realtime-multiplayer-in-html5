@@ -28,19 +28,13 @@ export default function processInput (playerspeed, player) {
 
                 if (key == 'u')
                     y_dir -= 1;
-            } // for all input values
+            }
+        }
 
-        } // for each input command
-    } // if we have inputs
-
-    // we have a direction vector now, so apply the same physics as the client
-    const resulting_vector = physics_movement_vector_from_direction(playerspeed, x_dir, y_dir);
-
-    if (player.inputs.length) {
-        // we can now clear the array since these have been processed
-        player.last_input_time = player.inputs[ic-1].time;
+        // clear the array since the new inputs have all been processed
         player.last_input_seq = player.inputs[ic-1].seq;
     }
 
-    return resulting_vector;
+    // we have a direction vector now, so apply the same physics as the client
+    return physics_movement_vector_from_direction(playerspeed, x_dir, y_dir);
 }

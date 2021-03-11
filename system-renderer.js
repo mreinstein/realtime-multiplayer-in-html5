@@ -43,7 +43,6 @@ export default function rendererSystem (world) {
 
     const onUpdate = function (dt) {
 
-        // get all of the entities in the world that pass the filter
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
             const client = entity.net_client;
             const game = entity.game_core;

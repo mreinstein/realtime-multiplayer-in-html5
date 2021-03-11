@@ -20,19 +20,19 @@ function process_net_updates (client, core) {
     // Then :  other player position = lerp ( past_pos, target_pos, current_time );
 
     //Find the position in the timeline of updates we stored.
-    var current_time = client.client_time;
-    var count = client.server_updates.length-1;
-    var target = null;
-    var previous = null;
+    const current_time = client.client_time;
+    const count = client.server_updates.length-1;
+    let target = null;
+    let previous = null;
 
     //We look from the 'oldest' updates, since the newest ones
     //are at the end (list.length-1 for example). This will be expensive
     //only when our time is not found on the timeline, since it will run all
     //samples. Usually this iterates very little before breaking out with a target.
-    for (var i = 0; i < count; ++i) {
+    for (let i = 0; i < count; ++i) {
 
-        var point = client.server_updates[i];
-        var next_point = client.server_updates[i+1];
+        const point = client.server_updates[i];
+        const next_point = client.server_updates[i+1];
 
         //Compare our point in time with the server times we have
         if (current_time > point.t && current_time < next_point.t) {
@@ -54,78 +54,77 @@ function process_net_updates (client, core) {
     //This is simple percentage maths, value/target = [0,1] range of numbers.
     //lerp requires the 0,1 value to lerp to? thats the one.
 
-    if (target && previous) {
+    if (!target || !previous)
+        return;
 
-        client.target_time = target.t;
+    client.target_time = target.t;
 
-        var difference = client.target_time - current_time;
-        var max_difference = fixed(target.t - previous.t);
-        var time_point = fixed(difference/max_difference);
+    const difference = client.target_time - current_time;
+    const max_difference = fixed(target.t - previous.t);
+    let time_point = fixed(difference/max_difference);
 
-        //Because we use the same target and previous in extreme cases
-        //It is possible to get incorrect values due to division by 0 difference
-        //and such. This is a safe guard and should probably not be here. lol.
-        if ( isNaN(time_point) )
-        	time_point = 0;
-        if (time_point == -Infinity)
-        	time_point = 0;
-        if (time_point == Infinity)
-        	time_point = 0;
+    //Because we use the same target and previous in extreme cases
+    //It is possible to get incorrect values due to division by 0 difference
+    //and such. This is a safe guard and should probably not be here. lol.
+    if ( isNaN(time_point) )
+    	time_point = 0;
+    if (time_point == -Infinity)
+    	time_point = 0;
+    if (time_point == Infinity)
+    	time_point = 0;
 
-        // The most recent server update
-        const latest_server_data = client.server_updates[ client.server_updates.length-1 ];
+    // The most recent server update
+    const latest_server_data = client.server_updates[ client.server_updates.length-1 ];
+
+    // These are the exact server positions from this tick, but only for the ghost
+    const other_server_pos = core.players.self.host ? latest_server_data.cp : latest_server_data.hp;
+
+    // The other players positions in this timeline, behind us and in front of us
+    const other_target_pos = core.players.self.host ? target.cp : target.hp;
+    const other_past_pos = core.players.self.host ? previous.cp : previous.hp;
+
+    // update the dest block, this is a simple lerp
+    // to the target from the previous point in the server_updates buffer
+    client.ghosts.server_pos_other.pos = pos(other_server_pos);
+    client.ghosts.pos_other.pos = v_lerp(other_past_pos, other_target_pos, time_point);
+
+    if (client.client_smoothing)
+        core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, PHYSICS_FRAME_TIME*client.client_smooth);
+    else
+        core.players.other.pos = pos(client.ghosts.pos_other.pos);
+
+    // Now, if not predicting client movement , we will maintain the local player position
+    // using the same method, smoothing the players information from the past.
+    if (!client.client_predict && !client.naive_approach) {
 
         // These are the exact server positions from this tick, but only for the ghost
-        var other_server_pos = core.players.self.host ? latest_server_data.cp : latest_server_data.hp;
+        const my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
 
         // The other players positions in this timeline, behind us and in front of us
-        var other_target_pos = core.players.self.host ? target.cp : target.hp;
-        var other_past_pos = core.players.self.host ? previous.cp : previous.hp;
+        const my_target_pos = core.players.self.host ? target.hp : target.cp;
+        const my_past_pos = core.players.self.host ? previous.hp : previous.cp;
 
-        // update the dest block, this is a simple lerp
-        // to the target from the previous point in the server_updates buffer
-        client.ghosts.server_pos_other.pos = pos(other_server_pos);
-        client.ghosts.pos_other.pos = v_lerp(other_past_pos, other_target_pos, time_point);
+        // Snap the ghost to the new server position
+        client.ghosts.server_pos_self.pos = pos(my_server_pos);
+        const local_target = v_lerp(my_past_pos, my_target_pos, time_point);
 
+        // Smoothly follow the destination position
         if (client.client_smoothing)
-            core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, PHYSICS_FRAME_TIME*client.client_smooth);
+            core.players.self.pos = v_lerp( core.players.self.pos, local_target, PHYSICS_FRAME_TIME*client.client_smooth);
         else
-            core.players.other.pos = pos(client.ghosts.pos_other.pos);
-
-        // Now, if not predicting client movement , we will maintain the local player position
-        // using the same method, smoothing the players information from the past.
-        if (!client.client_predict && !client.naive_approach) {
-
-            // These are the exact server positions from this tick, but only for the ghost
-            var my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
-
-            // The other players positions in this timeline, behind us and in front of us
-            var my_target_pos = core.players.self.host ? target.hp : target.cp;
-            var my_past_pos = core.players.self.host ? previous.hp : previous.cp;
-
-            // Snap the ghost to the new server position
-            client.ghosts.server_pos_self.pos = pos(my_server_pos);
-            var local_target = v_lerp(my_past_pos, my_target_pos, time_point);
-
-            // Smoothly follow the destination position
-            if (client.client_smoothing)
-                core.players.self.pos = v_lerp( core.players.self.pos, local_target, PHYSICS_FRAME_TIME*client.client_smooth);
-            else
-                core.players.self.pos = pos( local_target );
-        }
-
-    } // if target && previous
+            core.players.self.pos = pos( local_target );
+    }
 }
 
 
 function update_local_position (client, core) {
 	 if (client.client_predict) {
 	    // Work out the time we have since we updated the state
-	    //var t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
+	    //const t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
 
 	    // store the states for clarity,
-	    var old_state = core.players.self.old_state.pos;
-	    var current_state = core.players.self.cur_state.pos;
+	    const old_state = core.players.self.old_state.pos;
+	    const current_state = core.players.self.cur_state.pos;
 
 	    // Make sure the visual position matches the states we have stored
 	    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_state,old_state), t )  );
@@ -225,14 +224,14 @@ function onserverupdate_received (data, client, core) {
 
 function reset_positions (client, core) {
 
-    var player_host = core.players.self.host ?  core.players.self : core.players.other;
-    var player_client = core.players.self.host ?  core.players.other : core.players.self;
+    const player_host = core.players.self.host ?  core.players.self : core.players.other;
+    const player_client = core.players.self.host ?  core.players.other : core.players.self;
 
     // Host always spawns at the top left.
     player_host.pos = [ 20, 20 ];
     player_client.pos = [ 500, 200 ];
 
-        //Make sure the local player physics is updated
+    // Make sure the local player physics is updated
     core.players.self.old_state.pos = pos(core.players.self.pos);
     core.players.self.pos = pos(core.players.self.pos);
     core.players.self.cur_state.pos = pos(core.players.self.pos);
@@ -247,10 +246,10 @@ function reset_positions (client, core) {
 
 function onreadygame (client, core, data) {
 
-    var server_time = parseFloat(data.replace('-','.'));
+    const server_time = parseFloat(data.replace('-','.'));
 
-    var player_host = core.players.self.host ?  core.players.self : core.players.other;
-    var player_client = core.players.self.host ?  core.players.other : core.players.self;
+    const player_host = core.players.self.host ?  core.players.self : core.players.other;
+    const player_client = core.players.self.host ?  core.players.other : core.players.self;
 
     core.network_time = server_time + client.net_latency;
     console.log('server time is about ' + core.network_time);
@@ -285,7 +284,7 @@ function onjoingame (client, core, data) {
 function onhostgame (client, core, data) {
 	//The server sends the time when asking us to host, but it should be a new game.
 	//so the value will be really small anyway (15 or 16ms)
-	var server_time = parseFloat(data.replace('-','.'));
+	const server_time = parseFloat(data.replace('-','.'));
 
 	//Get an estimate of the current time on the server
 	core.network_time = server_time + client.net_latency;
@@ -325,10 +324,10 @@ function onping (client, data) {
 
 
 function onnetmessage (client, core, data) {
-    var commands = data.split('.');
-    var command = commands[0];
-    var subcommand = commands[1] || null;
-    var commanddata = commands[2] || null;
+    const commands = data.split('.');
+    const command = commands[0];
+    const subcommand = commands[1] || null;
+    const commanddata = commands[2] || null;
 
     switch(command) {
         case 's': // server message
@@ -381,7 +380,7 @@ function process_net_prediction_correction (client, core) {
     const latest_server_data = client.server_updates[client.server_updates.length-1];
 
     // Our latest server position
-    var my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
+    const my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
 
     // Update the debug server position block
     client.ghosts.server_pos_self.pos = pos(my_server_pos);
@@ -437,7 +436,6 @@ export default function netClientSystem (world) {
 
     	const newTime = performance.now();
 
-        // get all of the entities in the world that pass the filter
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core' ])) {
         	const client = entity.net_client;
         	const game = entity.game_core;

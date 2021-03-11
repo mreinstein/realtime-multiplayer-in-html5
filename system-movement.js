@@ -5,7 +5,7 @@ import updatePhysics from './update-physics.js';
 export default function movementSystem (world) {
 
     const onFixedUpdate = function (dt) {	
-        // get all of the entities in the world that pass the filter
+        
         for (const entity of ECS.getEntities(world, [ 'net_client', 'game_core', 'movement' ])) {
             updatePhysics(entity.net_client, entity.game_core);
         }

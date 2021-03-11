@@ -159,8 +159,8 @@ window.onload = function () {
     ECS.addComponentToEntity(world, clientEntity, 'net_client', client);
     ECS.addComponentToEntity(world, clientEntity, 'movement');
 
-    ECS.addSystem(world, movementSystem);
     ECS.addSystem(world, inputSystem);
+    ECS.addSystem(world, movementSystem);
     ECS.addSystem(world, netClientSystem);
     ECS.addSystem(world, rendererSystem);
 
