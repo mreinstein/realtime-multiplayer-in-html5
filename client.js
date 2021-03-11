@@ -76,13 +76,13 @@ function createNetClientComponent (core) {
 
 	const ghosts = {
 		// Our ghost position on the server
-        server_pos_self: new game_player(),
+        server_pos_self: game_player(),
 
         // The other players server position as we receive it
-        server_pos_other: new game_player(),
+        server_pos_other: game_player(),
 
         // The other players ghost destination position (the lerp)
-        pos_other: new game_player()
+        pos_other: game_player()
     };
 
 	ghosts.pos_other.state = 'dest_pos';
@@ -130,7 +130,7 @@ function createNetClientComponent (core) {
 	    interpolation_offset: 0.1,    // 0.1s latency between server and client interpolation for other clients
 	    buffer_size: 2,               // The size of the server history to keep for rewinding/interpolating.
 	    target_time: 0.01,            // the time where we want to be in the server timeline
-	    oldest_tick: 0.01,            // the last time tick we have available in the buffer
+	    //oldest_tick: 0.01,            // the last time tick we have available in the buffer
 
 	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(interpolation_offset).
 	    server_time: 0.01             // The time the server reported it was at, last we heard from it
@@ -148,8 +148,8 @@ window.onload = function () {
     // Create our game client instance.
     const game = gameCore.create({ isServer: false });
 
-    game.players.self = new game_player();
-    game.players.other = new game_player();
+    game.players.self = game_player();
+    game.players.other = game_player();
 
 
     const client = createNetClientComponent(game);

@@ -213,7 +213,7 @@ function onserverupdate_received (data, client, core) {
         //If client_time gets behind this due to latency, a snap occurs
         //to the last tick. Unavoidable, and a reallly bad connection here.
         //If that happens it might be best to drop the game after a period of time.
-        client.oldest_tick = client.server_updates[0].t;
+        //client.oldest_tick = client.server_updates[0].t;
 
         //Handle the latest positions from the server
         //and make sure to correct our local predictions, making the server have final say.
@@ -385,39 +385,43 @@ function process_net_prediction_correction (client, core) {
     // Update the debug server position block
     client.ghosts.server_pos_self.pos = pos(my_server_pos);
 
-    // here we handle our local input prediction ,
+    // here we handle our local input prediction,
     // by correcting it with the server and reconciling its differences
 
     const my_last_input_on_server = core.players.self.host ? latest_server_data.his : latest_server_data.cis;
-    if (my_last_input_on_server) {
-        // The last input sequence index in my local input list
-        let lastinputseq_index = -1;
-        // Find this input in the list, and store the index
-        for (let i = 0; i < core.players.self.inputs.length; ++i) {
-            if (core.players.self.inputs[i].seq == my_last_input_on_server) {
-                lastinputseq_index = i;
-                break;
-            }
-        }
+    if (!my_last_input_on_server)
+        return;
 
-        // crop the list of any updates we have already processed
-        if (lastinputseq_index != -1) {
-            // so we have now gotten an acknowledgement from the server that our inputs here have been accepted
-            // and that we can predict from this known position instead
-
-            // remove the rest of the inputs we have confirmed on the server
-            const number_to_clear = Math.abs(lastinputseq_index - (-1));
-            core.players.self.inputs.splice(0, number_to_clear);
-            // The player is now located at the new server position, authoritive server
-            core.players.self.cur_state.pos = pos(my_server_pos);
-            core.players.self.last_input_seq = lastinputseq_index;
-            // Now we reapply all the inputs that we have locally that
-            // the server hasn't yet confirmed. This will 'keep' our position the same,
-            // but also confirm the server position at the same time.
-            updatePhysics(client, core);
-            update_local_position(core);
+    // The last input sequence index in my local input list
+    let lastinputseq_index = -1;
+    // Find this input in the list, and store the index
+    for (let i = 0; i < core.players.self.inputs.length; ++i) {
+        if (core.players.self.inputs[i].seq == my_last_input_on_server) {
+            lastinputseq_index = i;
+            break;
         }
     }
+
+    // crop the list of any updates we have already processed
+    if (lastinputseq_index < 0)
+        return;
+
+    // we have now gotten an acknowledgement from the server that our inputs here have been accepted
+    // and that we can predict from this known position instead
+
+    // remove the rest of the inputs we have confirmed on the server
+    const number_to_clear = Math.abs(lastinputseq_index - (-1));
+    core.players.self.inputs.splice(0, number_to_clear);
+
+    // The player is now located at the new server position, authoritive server
+    core.players.self.cur_state.pos = pos(my_server_pos);
+    core.players.self.last_input_seq = lastinputseq_index;
+    
+    // Now we reapply all the inputs that we have locally that
+    // the server hasn't yet confirmed. This will 'keep' our position the same,
+    // but also confirm the server position at the same time.
+    updatePhysics(client, core);
+    update_local_position(core);
 }
 
 
