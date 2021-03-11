@@ -31,11 +31,11 @@ function drawPlayer (player, ctx) {
     ctx.fillStyle = player.color;
 
     // Draw a rectangle for us
-    ctx.fillRect(player.pos.x - player.size.hx, player.pos.y - player.size.hy, player.size.x, player.size.y);
+    ctx.fillRect(player.pos[0] - player.size.hx, player.pos[1] - player.size.hy, player.size.w, player.size.h);
 
     // Draw a status update
     ctx.fillStyle = player.info_color;
-    ctx.fillText(player.state, player.pos.x+10, player.pos.y + 4);
+    ctx.fillText(player.state, player.pos[0]+10, player.pos[1] + 4);
 }
 
 

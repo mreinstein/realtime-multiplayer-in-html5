@@ -95,9 +95,9 @@ function createNetClientComponent (core) {
     ghosts.server_pos_self.state = 'server_pos';
     ghosts.server_pos_other.state = 'server_pos';
 
-    ghosts.server_pos_self.pos = { x: 20, y: 20 };
-    ghosts.pos_other.pos = { x: 500, y: 200 };
-    ghosts.server_pos_other.pos = { x: 500, y: 200 };
+    ghosts.server_pos_self.pos = [ 20, 20 ];
+    ghosts.pos_other.pos = [ 500, 200 ];
+    ghosts.server_pos_other.pos = [ 500, 200 ];
 
 	const client = {
 		// Debugging ghosts, to help visualise things

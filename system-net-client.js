@@ -229,8 +229,8 @@ function reset_positions (client, core) {
     var player_client = core.players.self.host ?  core.players.other : core.players.self;
 
     // Host always spawns at the top left.
-    player_host.pos = { x: 20, y: 20 };
-    player_client.pos = { x: 500, y: 200 };
+    player_host.pos = [ 20, 20 ];
+    player_client.pos = [ 500, 200 ];
 
         //Make sure the local player physics is updated
     core.players.self.old_state.pos = pos(core.players.self.pos);
@@ -320,7 +320,7 @@ function on_otherclientcolorchange (core, data) {
 
 function onping (client, data) {
     client.net_ping = Date.now() - parseFloat(data);
-    client.net_latency = client.net_ping/2;
+    client.net_latency = client.net_ping / 2;
 }
 
 

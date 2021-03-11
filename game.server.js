@@ -12,6 +12,7 @@ import game_player    from './game-player.js';
 import pos            from './lib/pos.js';
 import processInput   from './process-input.js';
 import v_add          from './lib/v-add.js';
+//import { vec2 }       from 'gl-matrix';
 import UUID           from 'node-uuid';
 
 
@@ -127,7 +128,7 @@ function createGame (game_server, playerSocket) {
 
     core.players.self = new game_player(thegame.hostSocket);
     core.players.other = new game_player(thegame.clientSocket);
-    core.players.self.pos = { x: 20, y: 20 };
+    core.players.self.pos = [ 20, 20 ];
 
 
     // Store it in the list of game
