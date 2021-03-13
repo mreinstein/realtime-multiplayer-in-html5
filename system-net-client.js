@@ -410,7 +410,7 @@ function process_net_prediction_correction (client, core) {
     // and that we can predict from this known position instead
 
     // remove the rest of the inputs we have confirmed on the server
-    const number_to_clear = Math.abs(lastinputseq_index - (-1));
+    const number_to_clear = Math.abs(lastinputseq_index + 1);
     core.players.self.inputs.splice(0, number_to_clear);
 
     // The player is now located at the new server position, authoritive server

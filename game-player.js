@@ -10,13 +10,21 @@ export default function gamePlayer (playerSocket) {
         info_color: 'rgba(255,255,255,0.1)',
         id: '',
 
-        last_input_seq: 0,  // 'host input sequence', the last input we processed for the host
+        last_input_seq: 0,  // the last input we processed for this player
 
         // used in moving us around later
         old_state: { pos: [ 0, 0 ] },
         cur_state: { pos: [ 0, 0 ] },
 
         // Our local history of inputs
+        /*
+        example structure of an input entry:
+            {
+                inputs: [ 'l', 'u', 'd' ],
+                time: 8934.34,
+                seq: 306
+            }
+        */
         inputs: [ ],
 
         // The 'host' of a game gets created with a player socket since
