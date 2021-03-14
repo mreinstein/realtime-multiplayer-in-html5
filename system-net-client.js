@@ -428,7 +428,7 @@ function process_net_prediction_correction (client, core) {
 export default function netClientSystem (world) {
 
     // run at the start of each game frame before fixedUpdate or update
-    // @param Number dt elapsed time in milliseconds
+    // @param Number dt elapsed time in milliseconds since last invocation
     const onPreUpdate = function (dt) {
         dt = dt / 1000.0;  // convert ms to seconds
 

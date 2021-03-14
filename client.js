@@ -72,7 +72,7 @@ function create_debug_gui (client, core) {
 }
 
 
-function createNetClientComponent (core) {
+function createNetClientComponent () {
 
 	const ghosts = {
 		// Our ghost position on the server
@@ -135,6 +135,7 @@ function createNetClientComponent (core) {
 	    client_time: 0.01,            // Our local 'clock' based on server time - client interpolation(interpolation_offset).
 	    server_time: 0.01             // The time the server reported it was at, last we heard from it
 	};
+
 
 	return client;
 }

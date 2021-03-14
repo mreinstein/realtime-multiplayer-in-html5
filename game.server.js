@@ -81,10 +81,10 @@ function _onMessage (game_server, client, message) {
         // a client is asking for lag simulation
         game_server.fake_latency = parseFloat(message_parts[1]);
     }
-};
+}
 
 
-function handle_server_input (core, client, input, input_time, input_seq) {
+function handle_server_input (core, client, input, input_seq) {
 
     // Fetch which client this refers to out of the two
     const player_client =
@@ -92,7 +92,7 @@ function handle_server_input (core, client, input, input_time, input_seq) {
             core.players.self : core.players.other;
 
     // Store the input on the player instance for processing in the physics loop
-    player_client.inputs.push({ inputs: input, time: input_time, seq: input_seq });
+    player_client.inputs.push({ inputs: input, seq: input_seq });
 }
 
 
@@ -101,13 +101,12 @@ function onInput (client, parts) {
     // so we split them up into separate commands,
     // and then update the players
     const input_commands = parts[1].split('-');
-    const input_time = parts[2].replace('-', '.');
-    const input_seq = parts[3];
+    const input_seq = parts[2];
 
     // the client should be in a game, so
     // we can tell that game to handle the input
     if (client && client.game && client.game.core)
-        handle_server_input(client.game.core, client, input_commands, input_time, input_seq);
+        handle_server_input(client.game.core, client, input_commands, input_seq);
 }
 
 
@@ -129,7 +128,6 @@ function createGame (game_server, playerSocket) {
     core.players.self = game_player(thegame.hostSocket);
     core.players.other = game_player(thegame.clientSocket);
     core.players.self.pos = [ 20, 20 ];
-
 
     // Store it in the list of game
     game_server.games[thegame.id] = thegame;
