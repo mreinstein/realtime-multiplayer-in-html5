@@ -4,9 +4,11 @@ Forked Copy
 The original repository this is from is essentially frozen. It includes reference material for an article on game networking, so the author is understandably reluctant to change it. 
 
 Here's what my changes do:
-* switches `game.core.js` from object oriented to a data oriented approach
-* uses es modules everywhere
-* moves number functions to not extend the built in number type
+* re-design the architecture from object oriented to data oriented design
+* re-design the game client around an Entity Component System (ECS)
+* use es modules everywhere
+* switch the position object format from `{ x, y }` to `[ x, y ]`
+* move number functions to not extend the built in number type
 
 
 Realtime Multiplayer In HTML5
