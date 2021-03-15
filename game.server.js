@@ -14,10 +14,10 @@ import processInput   from './process-input.js';
 import v_add          from './lib/v-add.js';
 //import { vec2 }       from 'gl-matrix';
 import UUID           from 'node-uuid';
+import { SERVER_BROADCAST_TIME } from './constants.js';
 
 
 const VERBOSE = true;
-const SERVER_FRAME_TIME = 45; // run the server update every 45ms, 22hz
 
 
 function createServer () {
@@ -148,14 +148,14 @@ function createGame (game_server, playerSocket) {
 }
 
 
-// this runs every 45 ms
+// this runs every <SERVER_BROADCAST_TICK> millseconds
 function broadcast (game_server) {
-    const dt = 0.045;
 
     for (const gameid in game_server.games) {
         const thegame = game_server.games[gameid];
         const core = thegame.core;
 
+        const dt = SERVER_BROADCAST_TIME;
         core.network_time += dt;
 
         // Make a snapshot of the current state, for updating the clients
@@ -178,7 +178,7 @@ function broadcast (game_server) {
 }
 
 
-// this runs every 15 ms
+// this runs every <PHYSICS_FRAME_TICK> ms
 function update (game_server) {
     for (const gameid in game_server.games) {
         const thegame = game_server.games[gameid];

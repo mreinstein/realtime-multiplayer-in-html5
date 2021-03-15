@@ -13,6 +13,7 @@ import inputSystem     from './system-input.js';
 import movementSystem  from './system-movement.js';
 import netClientSystem from './system-net-client.js';
 import rendererSystem  from './system-renderer.js';
+import { PHYSICS_FRAME_TICK } from './constants.js';
 
 
 function create_debug_gui (client, core) {
@@ -183,9 +184,6 @@ window.onload = function () {
 	Renderer.ctx.font = '11px "Helvetica"';
 
 	let currentTime = performance.now(), accumulator = 0;
-
-	const PHYSICS_FRAME_TICK = 1000 / 15; // physics runs @ 15 fps
-
 
 	// inspired by https://gafferongames.com/post/fix_your_timestep/
 	const update = function () {

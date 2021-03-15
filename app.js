@@ -18,6 +18,7 @@ import path       from 'path';
 import UUID       from 'node-uuid';
 import http       from 'http';
 import { fileURLToPath } from 'url';
+import { PHYSICS_FRAME_TICK, SERVER_BROADCAST_TICK } from './constants.js';
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,17 +128,17 @@ sio.sockets.on('connection', function (client) {
 
 
 function tick () {
-    game_server.accumulator += 15;
+    game_server.accumulator += PHYSICS_FRAME_TICK;
 
     GameServer.update(game_server);
 
-    if (game_server.accumulator === 45) {
+    if (game_server.accumulator === SERVER_BROADCAST_TICK) {
         game_server.accumulator = 0;
         GameServer.broadcast(game_server);
     }
 
-    setTimeout(tick, 15);
+    setTimeout(tick, PHYSICS_FRAME_TICK);
 }
 
 
-setTimeout(tick, 15);
+setTimeout(tick, PHYSICS_FRAME_TICK);

@@ -4,9 +4,7 @@ import fixed          from './lib/fixed.js';
 import pos            from './lib/pos.js';
 import updatePhysics  from './update-physics.js';
 import v_lerp         from './lib/v-lerp.js';
-
-
-const PHYSICS_FRAME_TIME = 0.015; // physics runs @ 15 fps
+import { PHYSICS_FRAME_TIME } from '/constants.js';
 
 
 function process_net_updates (client, core) {
