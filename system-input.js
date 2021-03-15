@@ -40,22 +40,20 @@ export default function inputSystem (world) {
                 input.push('u');
             }
 
-            if (input.length) {
-                // Update what sequence we are on now
-                client.input_seq += 1;
+            // Update what sequence we are on now
+            client.input_seq += 1;
 
-                // Store the input state as a snapshot of what happened.
-                core.players.self.inputs.push({
-                    inputs: input,
-                    seq: client.input_seq
-                });
+            // Store the input state as a snapshot of what happened.
+            core.players.self.inputs.push({
+                inputs: input,
+                seq: client.input_seq
+            });
 
-                // Send the packet of information to the server.
-                // The input packets are labelled with an 'i' in front.
-                const server_packet = `i.${input.join('-')}.${client.input_seq}`;
+            // Send the packet of information to the server.
+            // The input packets are labelled with an 'i' in front.
+            const server_packet = `i.${input.join('-')}.${client.input_seq}`;
 
-                client.socket.send(server_packet);
-            }
+            client.socket.send(server_packet);
         }
     }
 

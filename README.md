@@ -9,6 +9,7 @@ Here's what my changes do:
 * use es modules everywhere
 * switch the position object format from `{ x, y }` to `[ x, y ]`
 * move number functions to not extend the built in number type
+* player input is sent every tick, even if no keys are pressed. When networking simulations where things can affect object positions even without player input (e.g., falling due to gravity) we should still send data so that the physics update runs for every client frame on the server.
 
 
 Realtime Multiplayer In HTML5

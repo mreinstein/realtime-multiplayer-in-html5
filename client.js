@@ -153,7 +153,6 @@ window.onload = function () {
     game.players.self = game_player();
     game.players.other = game_player();
 
-
     const client = createNetClientComponent(game);
 
     const clientEntity = ECS.createEntity(world);
@@ -165,7 +164,6 @@ window.onload = function () {
     ECS.addSystem(world, movementSystem);
     ECS.addSystem(world, netClientSystem);
     ECS.addSystem(world, rendererSystem);
-
 
     // Set player colors from the storage or locally
     game.color = localStorage.getItem('color') || '#cc8822' ;
