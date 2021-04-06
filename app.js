@@ -68,7 +68,7 @@ app.get( '/*' , function ( req, res, next ) {
 
 // Express and socket.io can work together to serve the socket.io client files for you.
 // This way, when the client requests '/socket.io/' files, socket.io determines what the client needs.
-        
+      
 // Create a socket.io instance using our express server
 const sio = io.listen(server);
 
@@ -87,7 +87,7 @@ sio.configure(function () {
 // as well as give that client a unique ID to use so we can
 // maintain the list if players.
 sio.sockets.on('connection', function (client) {
-    
+
     // Generate a new UUID, looks something like
     // 5b2ca132-64bd-4513-99da-90e838ca47d1
     const userid = UUID();

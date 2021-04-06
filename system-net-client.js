@@ -1,5 +1,5 @@
 import ECS            from 'https://cdn.skypack.dev/ecs';
-import checkCollision from './check-collision.js';
+import handleCollision from './handle-collision.js';
 import fixed          from './lib/fixed.js';
 import pos            from './lib/pos.js';
 import updatePhysics  from './update-physics.js';
@@ -129,7 +129,7 @@ function update_local_position (client, core) {
 	    core.players.self.pos = current_state;
 	    
 	    // handle collision on client if predicting.
-	    checkCollision(core.world, core.players.self);
+	    handleCollision(core.world, core.players.self);
     }
 }
 

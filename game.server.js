@@ -5,15 +5,15 @@ written for : http://buildnewgames.com/real-time-multiplayer/
 
 MIT Licensed.
 */
-import checkCollision from './check-collision.js';
-import fixed          from './lib/fixed.js';
-import gameCore       from './game.core.js'; // shared game library code
-import game_player    from './game-player.js';
-import pos            from './lib/pos.js';
-import processInput   from './process-input.js';
-import v_add          from './lib/v-add.js';
-//import { vec2 }       from 'gl-matrix';
-import UUID           from 'node-uuid';
+import handleCollision from './handle-collision.js';
+import fixed           from './lib/fixed.js';
+import gameCore        from './game.core.js'; // shared game library code
+import game_player     from './game-player.js';
+import pos             from './lib/pos.js';
+import processInput    from './process-input.js';
+import v_add           from './lib/v-add.js';
+//import { vec2 }        from 'gl-matrix';
+import UUID            from 'node-uuid';
 import { SERVER_BROADCAST_TIME } from './constants.js';
 
 
@@ -70,7 +70,7 @@ function _onMessage (game_server, client, message) {
 
     if (message_type == 'i') {
         // Input handler will forward this
-        onInput(client, message_parts);
+        _onInput(client, message_parts);
     } else if (message_type == 'p') {
         client.send('s.p.' + message_parts[1]);
     } else if (message_type == 'c') {
@@ -84,19 +84,7 @@ function _onMessage (game_server, client, message) {
 }
 
 
-function handle_server_input (core, client, input, input_seq) {
-
-    // Fetch which client this refers to out of the two
-    const player_client =
-        (client.userid == core.players.self.socket.userid) ?
-            core.players.self : core.players.other;
-
-    // Store the input on the player instance for processing in the physics loop
-    player_client.inputs.push({ inputs: input, seq: input_seq });
-}
-
-
-function onInput (client, parts) {
+function _onInput (client, parts) {
     // The input commands come in like u-l,
     // so we split them up into separate commands,
     // and then update the players
@@ -105,8 +93,15 @@ function onInput (client, parts) {
 
     // the client should be in a game, so
     // we can tell that game to handle the input
-    if (client && client.game && client.game.core)
-        handle_server_input(client.game.core, client, input_commands, input_seq);
+    if (client && client.game && client.game.core) {
+        // Fetch which client this refers to out of the two
+        const player_client =
+            (client.userid == client.game.core.players.self.socket.userid) ?
+                client.game.core.players.self : client.game.core.players.other;
+
+        // Store the input on the player instance for processing in the physics loop
+        player_client.inputs.push({ inputs: input_commands, seq: input_seq });
+    }
 }
 
 
@@ -196,8 +191,8 @@ function update (game_server) {
         core.players.other.pos = v_add( core.players.other.old_state.pos, other_new_dir);
 
         // Keep the physics position in the world
-        checkCollision(core.world, core.players.self);
-        checkCollision(core.world, core.players.other);
+        handleCollision(core.world, core.players.self);
+        handleCollision(core.world, core.players.other);
 
         core.players.self.inputs = [ ];  // we have cleared the input buffer, so remove this
         core.players.other.inputs = [ ]; // we have cleared the input buffer, so remove this
@@ -247,7 +242,7 @@ function endGame (game_server, gameid, userid) {
 }
 
 
-function startGame (game) {
+function _startGame (game) {
     // a game has 2 players and wants to begin
     // the host already knows they are hosting,
     // tell the other client they are joining a game
@@ -292,7 +287,7 @@ function findGame (game_server, playerSocket) {
 
                 // start running the game on the server,
                 // which will tell them to respawn/start
-                startGame(game_instance);
+                _startGame(game_instance);
 
             } //if less than 2 players
         } // for all games

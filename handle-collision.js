@@ -4,7 +4,7 @@ import fixed from './lib/fixed.js';
     Shared between server and client.
     In this example, `item` is always of type game_player.
 */
-export default function checkCollision (world, item) {
+export default function handleCollision (world, item) {
 
     // The world bounds we are confined to
     const pos_limits = {
