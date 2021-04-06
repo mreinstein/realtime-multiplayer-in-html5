@@ -7,6 +7,7 @@ MIT Licensed.
 */
 import ECS             from 'https://cdn.skypack.dev/ecs';
 import Renderer        from './Renderer.js';
+import dat             from 'https://cdn.skypack.dev/dat.gui';
 import gameCore        from './game.core.js';
 import game_player     from './game-player.js';
 import inputSystem     from './system-input.js';
