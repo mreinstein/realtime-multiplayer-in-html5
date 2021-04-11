@@ -83,13 +83,12 @@ function process_net_updates (client, core) {
 
     // update the dest block, this is a simple lerp
     // to the target from the previous point in the server_updates buffer
-    client.ghosts.server_pos_other.pos = pos(other_server_pos);
-    client.ghosts.pos_other.pos = v_lerp(other_past_pos, other_target_pos, time_point);
+    const other_pos = v_lerp(other_past_pos, other_target_pos, time_point);
 
     if (client.client_smoothing)
-        core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, PHYSICS_FRAME_TIME*client.client_smooth);
+        core.players.other.pos = v_lerp( core.players.other.pos, other_pos, PHYSICS_FRAME_TIME*client.client_smooth);
     else
-        core.players.other.pos = pos(client.ghosts.pos_other.pos);
+        core.players.other.pos = pos(other_pos);
 }
 
 
@@ -201,12 +200,6 @@ function reset_positions (client, core) {
     core.players.self.old_state.pos = pos(core.players.self.pos);
     core.players.self.pos = pos(core.players.self.pos);
     core.players.self.cur_state.pos = pos(core.players.self.pos);
-
-    // Position all debug view items to their owners position
-    client.ghosts.server_pos_self.pos = pos(core.players.self.pos);
-
-    client.ghosts.server_pos_other.pos = pos(core.players.other.pos);
-    client.ghosts.pos_other.pos = pos(core.players.other.pos);
 }
 
 
@@ -348,10 +341,7 @@ function process_net_prediction_correction (client, core) {
     // Our latest server position
     const my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
 
-    // Update the debug server position block
-    client.ghosts.server_pos_self.pos = pos(my_server_pos);
-
-    // here we handle our local input prediction,
+    // handle our local input prediction,
     // by correcting it with the server and reconciling its differences
 
     const my_last_input_on_server = core.players.self.host ? latest_server_data.his : latest_server_data.cis;

@@ -57,16 +57,6 @@ export default function rendererSystem (world) {
 
             // And then we finally draw
             drawPlayer(game.players.self, Renderer.ctx);
-
-            // and these
-            if (client.show_dest_pos)
-                drawPlayer(client.ghosts.pos_other, Renderer.ctx);
-
-            // and lastly draw these
-            if (client.show_server_pos) {
-                drawPlayer(client.ghosts.server_pos_self, Renderer.ctx);
-                drawPlayer(client.ghosts.server_pos_other, Renderer.ctx);
-            }
         }
     };
 

@@ -43,8 +43,6 @@ function create_debug_gui (client, core) {
     const _debugsettings = gui.addFolder('Debug view');
         
     _debugsettings.add(client, 'show_help').listen();
-    _debugsettings.add(client, 'show_server_pos').listen();
-    _debugsettings.add(client, 'show_dest_pos').listen();
     _debugsettings.add(core, 'network_time').listen();
 
     _debugsettings.open();
@@ -74,35 +72,7 @@ function create_debug_gui (client, core) {
 
 function createNetClientComponent () {
 
-	const ghosts = {
-		// Our ghost position on the server
-        server_pos_self: game_player(),
-
-        // The other players server position as we receive it
-        server_pos_other: game_player(),
-
-        // The other players ghost destination position (the lerp)
-        pos_other: game_player()
-    };
-
-	ghosts.pos_other.state = 'dest_pos';
-
-    ghosts.pos_other.info_color = 'rgba(255,255,255,0.1)';
-
-    ghosts.server_pos_self.info_color = 'rgba(255,255,255,0.2)';
-    ghosts.server_pos_other.info_color = 'rgba(255,255,255,0.2)';
-
-    ghosts.server_pos_self.state = 'server_pos';
-    ghosts.server_pos_other.state = 'server_pos';
-
-    ghosts.server_pos_self.pos = [ 20, 20 ];
-    ghosts.pos_other.pos = [ 500, 200 ];
-    ghosts.server_pos_other.pos = [ 500, 200 ];
-
 	const client = {
-		// Debugging ghosts, to help visualise things
-		ghosts,
-
 		// A list of recent server updates we interpolate across
 	    // This is the buffer that is the driving factor for our networking
 	    server_updates: [ ],
@@ -113,8 +83,7 @@ function createNetClientComponent () {
 	    socket: undefined,
 
 	    show_help: false,             // Whether or not to draw the help text
-	    show_server_pos: false,       // Whether or not to show the server position
-	    show_dest_pos: false,         // Whether or not to show the interpolation goal
+	    
 	    input_seq: 0,                 // When predicting client inputs, we store the last input as a sequence number
 	    client_smoothing: true,       // Whether or not the client side prediction tries to smooth things out
 	    client_smooth: 25,            // amount of smoothing to apply to client update dest
@@ -123,8 +92,7 @@ function createNetClientComponent () {
 	    net_ping: 0.001,              // The round trip time from here to the server,and back
 	    last_ping_time: 0.001,        // The time we last sent a ping
 	    fake_lag: 0,                  // If we are simulating lag, this applies only to the input client (not others)
-	    //fake_lag_time: 0,
-
+	    
 	    interpolation_offset: 0.1,    // 0.1s latency between server and client interpolation for other clients
 	    buffer_size: 2,               // The size of the server history to keep for rewinding/interpolating.
 	    target_time: 0.01,            // the time where we want to be in the server timeline
