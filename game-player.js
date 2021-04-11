@@ -1,6 +1,6 @@
 
 // stores the state of the on-screen player
-export default function gamePlayer (playerSocket) {
+export default function gamePlayer (playerSocket, pos=[ 500, 200 ]) {
     return {
         socket: playerSocket,
 
@@ -27,8 +27,6 @@ export default function gamePlayer (playerSocket) {
         */
         inputs: [ ],
 
-        // The 'host' of a game gets created with a player socket since
-        // the server already knows who they are.
-        pos: playerSocket ? [ 20, 20 ] : [ 500, 200 ]
+        pos
     };
 }

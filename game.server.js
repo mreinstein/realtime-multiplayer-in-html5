@@ -120,7 +120,7 @@ function createGame (game_server, playerSocket) {
         core
     };
 
-    core.players.self = game_player(thegame.hostSocket);
+    core.players.self = game_player(thegame.hostSocket, [ 20, 20]);
     core.players.other = game_player(thegame.clientSocket);
     core.players.self.pos = [ 20, 20 ];
 
