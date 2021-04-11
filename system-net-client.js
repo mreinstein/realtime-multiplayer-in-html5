@@ -17,22 +17,22 @@ function process_net_updates (client, core) {
     // searching throught the server_updates array for current_time in between 2 other times.
     // Then :  other player position = lerp ( past_pos, target_pos, current_time );
 
-    //Find the position in the timeline of updates we stored.
+    // Find the position in the timeline of updates we stored.
     const current_time = client.client_time;
     const count = client.server_updates.length-1;
     let target = null;
     let previous = null;
 
-    //We look from the 'oldest' updates, since the newest ones
-    //are at the end (list.length-1 for example). This will be expensive
-    //only when our time is not found on the timeline, since it will run all
-    //samples. Usually this iterates very little before breaking out with a target.
+    // We look from the 'oldest' updates, since the newest ones
+    // are at the end (list.length-1 for example). This will be expensive
+    // only when our time is not found on the timeline, since it will run all
+    // samples. Usually this iterates very little before breaking out with a target.
     for (let i = 0; i < count; ++i) {
 
         const point = client.server_updates[i];
         const next_point = client.server_updates[i+1];
 
-        //Compare our point in time with the server times we have
+        // Compare our point in time with the server times we have
         if (current_time > point.t && current_time < next_point.t) {
             target = next_point;
             previous = point;
@@ -40,17 +40,16 @@ function process_net_updates (client, core) {
         }
     }
 
-    //With no target we store the last known
-    //server position and move to that instead
+    // With no target we store the last known server position and move to that instead
     if (!target) {
         target = client.server_updates[0];
         previous = client.server_updates[0];
     }
 
-    //Now that we have a target and a previous destination,
-    //We can interpolate between then based on 'how far in between' we are.
-    //This is simple percentage maths, value/target = [0,1] range of numbers.
-    //lerp requires the 0,1 value to lerp to? thats the one.
+    // Now that we have a target and a previous destination,
+    // We can interpolate between then based on 'how far in between' we are.
+    // This is simple percentage maths, value/target = [0,1] range of numbers.
+    // lerp requires the 0,1 value to lerp to? thats the one.
 
     if (!target || !previous)
         return;
@@ -61,9 +60,9 @@ function process_net_updates (client, core) {
     const max_difference = fixed(target.t - previous.t);
     let time_point = fixed(difference/max_difference);
 
-    //Because we use the same target and previous in extreme cases
-    //It is possible to get incorrect values due to division by 0 difference
-    //and such. This is a safe guard and should probably not be here. lol.
+    // Because we use the same target and previous in extreme cases
+    // It is possible to get incorrect values due to division by 0 difference
+    // and such. This is a safe guard and should probably not be here. lol.
     if ( isNaN(time_point) )
     	time_point = 0;
     if (time_point == -Infinity)
@@ -170,19 +169,19 @@ function onserverupdate_received (data, client, core) {
     // small delay (interpolation_offset), allowing interpolation between the points.
     client.server_updates.push(data);
 
-    //we limit the buffer in seconds worth of updates
-    //60fps*buffer seconds = number of samples
+    // we limit the buffer in seconds worth of updates
+    // 60fps*buffer seconds = number of samples
     if (client.server_updates.length >= ( 60*client.buffer_size ))
         client.server_updates.splice(0,1);
 
-    //We can see when the last tick we know of happened.
-    //If client_time gets behind this due to latency, a snap occurs
-    //to the last tick. Unavoidable, and a reallly bad connection here.
-    //If that happens it might be best to drop the game after a period of time.
+    // We can see when the last tick we know of happened.
+    // If client_time gets behind this due to latency, a snap occurs
+    // to the last tick. Unavoidable, and a reallly bad connection here.
+    // If that happens it might be best to drop the game after a period of time.
     //client.oldest_tick = client.server_updates[0].t;
 
-    //Handle the latest positions from the server
-    //and make sure to correct our local predictions, making the server have final say.
+    // Handle the latest positions from the server
+    // and make sure to correct our local predictions, making the server have final say.
     process_net_prediction_correction(client, core);
 }
 
@@ -229,29 +228,29 @@ function onreadygame (client, core, data) {
 
 
 function onjoingame (client, core, data) {
-	//We are not the host
+	// We are not the host
 	core.players.self.host = false;
-	//Update the local state
+	// Update the local state
 	core.players.self.state = 'connected.joined.waiting';
 	core.players.self.info_color = '#00bb00';
 
-	//Make sure the positions match servers and other clients
+	// Make sure the positions match servers and other clients
 	reset_positions(client, core);
 }
 
 
 function onhostgame (client, core, data) {
-	//The server sends the time when asking us to host, but it should be a new game.
-	//so the value will be really small anyway (15 or 16ms)
+	// The server sends the time when asking us to host, but it should be a new game.
+	// so the value will be really small anyway (15 or 16ms)
 	const server_time = parseFloat(data.replace('-','.'));
 
-	//Get an estimate of the current time on the server
+	// Get an estimate of the current time on the server
 	core.network_time = server_time + client.net_latency;
 
-	//Set the flag that we are hosting, this helps us position respawns correctly
+	// Set the flag that we are hosting, this helps us position respawns correctly
 	core.players.self.host = true;
 
-	//Update debugging information to display state
+	// Update debugging information to display state
 	core.players.self.state = 'hosting.waiting for a player';
 	core.players.self.info_color = '#cc0000';
 
@@ -261,9 +260,9 @@ function onhostgame (client, core, data) {
 
 
 function onconnected (core, data) {
-    //The server responded that we are now in a game,
-    //this lets us store the information about ourselves and set the colors
-    //to show we are now ready to be playing.
+    // The server responded that we are now in a game,
+    // this lets us store the information about ourselves and set the colors
+    // to show we are now ready to be playing.
     core.players.self.id = data.id;
     core.players.self.info_color = '#cc0000';
     core.players.self.state = 'connected';
@@ -292,22 +291,22 @@ function onnetmessage (client, core, data) {
         case 's': // server message
             switch(subcommand) {
 
-                case 'h' : //host a game requested
+                case 'h' : // host a game requested
                     onhostgame(client, core, commanddata); break;
 
-                case 'j' : //join a game requested
+                case 'j' : // join a game requested
                     onjoingame(client, core, commanddata); break;
 
-                case 'r' : //ready a game requested
+                case 'r' : // ready a game requested
                     onreadygame(client, core, commanddata); break;
 
-                case 'e' : //end game requested
+                case 'e' : // end game requested
                     ondisconnect(core, commanddata); break;
 
-                case 'p' : //server ping
+                case 'p' : // server ping
                     onping(client, commanddata); break;
 
-                case 'c' : //other player changed colors
+                case 'c' : // other player changed colors
                     on_otherclientcolorchange(core, commanddata); break;
 
             }
