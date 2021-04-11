@@ -37,10 +37,8 @@ function create_debug_gui (client, core) {
 
     const _othersettings = gui.addFolder('Methods');
 
-    _othersettings.add(client, 'naive_approach').listen();
     _othersettings.add(client, 'client_smoothing').listen();
     _othersettings.add(client, 'client_smooth').listen();
-    _othersettings.add(client, 'client_predict').listen();
 
     const _debugsettings = gui.addFolder('Debug view');
         
@@ -115,10 +113,8 @@ function createNetClientComponent () {
 	    socket: undefined,
 
 	    show_help: false,             // Whether or not to draw the help text
-	    naive_approach: false,        // Whether or not to use the naive approach
 	    show_server_pos: false,       // Whether or not to show the server position
 	    show_dest_pos: false,         // Whether or not to show the interpolation goal
-	    client_predict: true,         // Whether or not the client is predicting input
 	    input_seq: 0,                 // When predicting client inputs, we store the last input as a sequence number
 	    client_smoothing: true,       // Whether or not the client side prediction tries to smooth things out
 	    client_smooth: 25,            // amount of smoothing to apply to client update dest

@@ -90,47 +90,23 @@ function process_net_updates (client, core) {
         core.players.other.pos = v_lerp( core.players.other.pos, client.ghosts.pos_other.pos, PHYSICS_FRAME_TIME*client.client_smooth);
     else
         core.players.other.pos = pos(client.ghosts.pos_other.pos);
-
-    // Now, if not predicting client movement , we will maintain the local player position
-    // using the same method, smoothing the players information from the past.
-    if (!client.client_predict && !client.naive_approach) {
-
-        // These are the exact server positions from this tick, but only for the ghost
-        const my_server_pos = core.players.self.host ? latest_server_data.hp : latest_server_data.cp;
-
-        // The other players positions in this timeline, behind us and in front of us
-        const my_target_pos = core.players.self.host ? target.hp : target.cp;
-        const my_past_pos = core.players.self.host ? previous.hp : previous.cp;
-
-        // Snap the ghost to the new server position
-        client.ghosts.server_pos_self.pos = pos(my_server_pos);
-        const local_target = v_lerp(my_past_pos, my_target_pos, time_point);
-
-        // Smoothly follow the destination position
-        if (client.client_smoothing)
-            core.players.self.pos = v_lerp( core.players.self.pos, local_target, PHYSICS_FRAME_TIME*client.client_smooth);
-        else
-            core.players.self.pos = pos( local_target );
-    }
 }
 
 
 function update_local_position (client, core) {
-	 if (client.client_predict) {
-	    // Work out the time we have since we updated the state
-	    //const t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
+    // Work out the time we have since we updated the state
+    //const t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
 
-	    // store the states for clarity,
-	    const old_state = core.players.self.old_state.pos;
-	    const current_state = core.players.self.cur_state.pos;
+    // store the states for clarity,
+    const old_state = core.players.self.old_state.pos;
+    const current_state = core.players.self.cur_state.pos;
 
-	    // Make sure the visual position matches the states we have stored
-	    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_state,old_state), t )  );
-	    core.players.self.pos = current_state;
-	    
-	    // handle collision on client if predicting.
-	    handleCollision(core.world, core.players.self);
-    }
+    // Make sure the visual position matches the states we have stored
+    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_state,old_state), t )  );
+    core.players.self.pos = current_state;
+    
+    // handle collision on client if predicting.
+    handleCollision(core.world, core.players.self);
 }
 
 
@@ -190,33 +166,25 @@ function onserverupdate_received (data, client, core) {
     // information to interpolate with so it misses positions, and packet loss destroys this approach
     // even more so. See 'the bouncing ball problem' on Wikipedia.
 
-    if (client.naive_approach) {
-        if (data.hp)
-            player_host.pos = pos(data.hp);
+   
+    // Cache the data from the server, and then play the timeline back to the player with a
+    // small delay (interpolation_offset), allowing interpolation between the points.
+    client.server_updates.push(data);
 
-        if (data.cp)
-            player_client.pos = pos(data.cp);
+    //we limit the buffer in seconds worth of updates
+    //60fps*buffer seconds = number of samples
+    if (client.server_updates.length >= ( 60*client.buffer_size ))
+        client.server_updates.splice(0,1);
 
-    } else {
-        // Cache the data from the server, and then play the timeline back to the player with a
-        // small delay (interpolation_offset), allowing interpolation between the points.
-        client.server_updates.push(data);
+    //We can see when the last tick we know of happened.
+    //If client_time gets behind this due to latency, a snap occurs
+    //to the last tick. Unavoidable, and a reallly bad connection here.
+    //If that happens it might be best to drop the game after a period of time.
+    //client.oldest_tick = client.server_updates[0].t;
 
-        //we limit the buffer in seconds worth of updates
-        //60fps*buffer seconds = number of samples
-        if (client.server_updates.length >= ( 60*client.buffer_size ))
-            client.server_updates.splice(0,1);
-
-        //We can see when the last tick we know of happened.
-        //If client_time gets behind this due to latency, a snap occurs
-        //to the last tick. Unavoidable, and a reallly bad connection here.
-        //If that happens it might be best to drop the game after a period of time.
-        //client.oldest_tick = client.server_updates[0].t;
-
-        //Handle the latest positions from the server
-        //and make sure to correct our local predictions, making the server have final say.
-        process_net_prediction_correction(client, core);     
-    }
+    //Handle the latest positions from the server
+    //and make sure to correct our local predictions, making the server have final say.
+    process_net_prediction_correction(client, core);
 }
 
 
@@ -456,10 +424,7 @@ export default function netClientSystem (world) {
 
 		    // Network player just gets drawn normally, with interpolation from
 		    // the server updates, smoothing out the positions from the past.
-		    // Note that if we don't have prediction enabled - this will also
-		    // update the actual local client position on screen as well.
-		    if (!client.naive_approach)
-		        process_net_updates(client, game);
+		     process_net_updates(client, game);
 
 		    // When we are doing client side prediction, we smooth out our position
 		    // across frames using local input states we have stored.
