@@ -95,13 +95,11 @@ function update_local_position (client, core) {
     // Work out the time we have since we updated the state
     //const t = (core.network_time - core.players.self.state_time) / PHYSICS_FRAME_TIME;
 
-    // store the states for clarity,
-    //const old_state = core.players.self.old_state.pos;
-    const current_state = core.players.self.cur_state.pos;
+    const current_pos = core.players.self.cur_state.pos;
 
     // Make sure the visual position matches the states we have stored
-    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_state,old_state), t )  );
-    core.players.self.pos = current_state;
+    //core.players.self.pos = v_add( old_state, core.v_mul_scalar( core.v_sub(current_pos, old_state), t )  );
+    core.players.self.pos = current_pos;
     
     // handle collision on client.
     handleCollision(core.world, core.players.self);
@@ -196,7 +194,6 @@ function reset_positions (client, core) {
     player_client.pos = [ 500, 200 ];
 
     // Make sure the local player physics is updated
-    core.players.self.old_state.pos = pos(core.players.self.pos);
     core.players.self.pos = pos(core.players.self.pos);
     core.players.self.cur_state.pos = pos(core.players.self.pos);
 }

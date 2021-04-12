@@ -9,11 +9,8 @@
 // This gets created on both server and client. Server creates one for
 // each game that is hosted, and client creates one for itself to play the game.
 
-function create ({ isServer }) {
+function create () {
     return {
-        // Store a flag if we are the server
-        isServer, 
-
         // Used in collision etc.
         world: {
             width: 720,
@@ -29,11 +26,7 @@ function create ({ isServer }) {
         playerspeed: 120,
         
         // timer for precision on server and client
-        network_time: 0.0,
-
-        // this is the result of calling requestAnimationFrame or setTmeout (handle to next update callback)
-        // can be used to cancel/stop the update loop
-        updateid: undefined
+        network_time: 0.0
     };
 }
 

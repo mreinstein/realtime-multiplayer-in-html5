@@ -109,7 +109,7 @@ function _onInput (client, parts) {
 function createGame (game_server, playerSocket) {
     
     // Create a new game core instance, this actually runs the game code like collisions and such.
-    const core = gameCore.create({ isServer: true });
+    const core = gameCore.create();
 
     // Create a new game instance
     const thegame = {
@@ -181,21 +181,23 @@ function update (game_server) {
         const core = thegame.core;
 
         // Handle player one
-        core.players.self.old_state.pos = pos( core.players.self.pos );
+        let old_pos = pos(core.players.self.pos);
+
         const new_dir = processInput(core.playerspeed, core.players.self);
-        core.players.self.pos = v_add( core.players.self.old_state.pos, new_dir );
+        core.players.self.pos = v_add(old_pos, new_dir);
 
         // Handle player two
-        core.players.other.old_state.pos = pos( core.players.other.pos );
+        old_pos = pos( core.players.other.pos );
         const other_new_dir = processInput(core.playerspeed, core.players.other);
-        core.players.other.pos = v_add( core.players.other.old_state.pos, other_new_dir);
+        core.players.other.pos = v_add(old_pos, other_new_dir);
 
         // Keep the physics position in the world
         handleCollision(core.world, core.players.self);
         handleCollision(core.world, core.players.other);
 
-        core.players.self.inputs = [ ];  // we have cleared the input buffer, so remove this
-        core.players.other.inputs = [ ]; // we have cleared the input buffer, so remove this
+        // we have cleared the input buffers so remove the existing values
+        core.players.self.inputs = [ ];
+        core.players.other.inputs = [ ];
     }
 }
 
